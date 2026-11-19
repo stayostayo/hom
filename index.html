@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HOM – Feel at Home | Your cozy home away from home in Trivandrum</title>
+  <meta name="description" content="HOM – Feel at Home. Two identical 2-bedroom AC units near Akkulam, Trivandrum, Kerala. Free WiFi, kitchen, balcony and safe parking. Rent one unit or both together.">
+  <meta property="og:title" content="HOM – Feel at Home">
+  <meta property="og:description" content="Your cozy home away from home in Trivandrum, Kerala. Comfort · Convenience · Connectivity.">
+  <meta property="og:image" content="images/garden-porch.jpg">
+  <meta name="theme-color" content="#024c23">
+  <link rel="icon" type="image/png" href="images/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --green:#024c23;--green2:#0d5e33;--green-deep:#013519;
+      --rust:#c85b22;--rust2:#b04d18;--peach:#f3c9a9;
+      --cream:#faf6ee;--sand:#efe7d8;--ink:#1f2a23;--muted:#5f6b64;--line:#e8e2d5
+    }
+    *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:84px}
+    body{margin:0;color:var(--ink);font-family:"DM Sans",system-ui,sans-serif;background:#fff;line-height:1.6;-webkit-font-smoothing:antialiased}
+    a{color:inherit;text-decoration:none}
+    img{display:block;width:100%;height:100%;object-fit:cover}
+    button{font:inherit}
+    svg{display:block}
+    .wrap{width:min(1160px,calc(100% - 44px));margin:auto}
+    h1,h2,h3{font-family:"Playfair Display",serif;font-weight:500;line-height:1.12;margin:0}
+    .eyebrow{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--rust);font-weight:700}
+    :focus-visible{outline:2px solid var(--rust);outline-offset:3px}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--green);color:#fff;padding:13px 21px;border-radius:4px;font-size:13px;font-weight:700;letter-spacing:.03em;border:1px solid var(--green);transition:.2s;cursor:pointer;white-space:nowrap}
+    .btn:hover{background:var(--green2);transform:translateY(-1px)}
+    .btn.rust{background:var(--rust);border-color:var(--rust)}.btn.rust:hover{background:var(--rust2)}
+    .btn.light{background:#fff;color:var(--green);border-color:#fff}.btn.light:hover{background:var(--cream)}
+    .btn svg{width:17px;height:17px}
+
+    .topline{background:var(--green);color:#fff;text-align:center;padding:8px 16px;font-size:12px;letter-spacing:.08em}
+    .topline a{color:var(--peach);font-weight:700}
+    header{background:#fff;position:sticky;top:0;z-index:20;border-bottom:1px solid #eee}
+    .nav{height:78px;display:flex;align-items:center;justify-content:space-between;gap:24px}
+    .brand img{height:52px;width:auto;object-fit:contain}
+    nav.main{display:flex;gap:28px;align-items:center;font-size:13px;font-weight:600;color:#44534b}
+    nav.main a:hover{color:var(--rust)}
+    .menu{display:none;background:none;border:0;font-size:26px;color:var(--green);cursor:pointer;padding:6px;line-height:1}
+    .mobile-nav{display:none;border-top:1px solid #eee;background:#fff}
+    .mobile-nav a{display:block;padding:14px 22px;border-bottom:1px solid #f1f1f1;font-weight:600;color:#33443a}
+    .mobile-nav.open{display:block}
+
+    .hero{background:var(--cream);padding:40px 0 60px}
+    .hero-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:48px;align-items:center;min-height:500px}
+    h1{font-size:clamp(40px,5.2vw,66px);color:var(--green);margin:16px 0 18px}
+    h1 em{font-style:italic;color:var(--rust)}
+    .hero-copy p{max-width:450px;color:var(--muted);font-size:16px;margin:0 0 22px}
+    .pill{display:inline-flex;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:30px;padding:8px 18px;font-size:13px;font-weight:600;color:var(--green);margin-bottom:26px}
+    .pill i{color:var(--rust);font-style:normal}
+    .hero-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+    .hero-photo{height:510px;position:relative}
+    .hero-photo img{border-radius:6px}
+    .badge{position:absolute;right:-14px;top:24px;background:var(--green);color:#fff;padding:18px 20px;max-width:180px;text-align:center;font:600 15px/1.35 "DM Sans",sans-serif;letter-spacing:.06em;text-transform:uppercase;border-radius:4px;box-shadow:0 8px 30px #0002}
+    .badge span{display:block;color:var(--peach);font-size:18px;margin-top:6px}
+    .photo-note{position:absolute;left:-24px;bottom:25px;background:#fff;padding:17px 22px;box-shadow:0 8px 30px #00000014;max-width:240px;border-radius:4px}
+    .photo-note strong{display:block;font-family:"Playfair Display",serif;font-size:19px;color:var(--green);font-weight:500}
+    .photo-note span{font-size:12px;color:var(--muted)}
+
+    .features{background:var(--green);color:#fff;padding:26px 0}
+    .feature-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+    .feature{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;line-height:1.3}
+    .feature svg{width:34px;height:34px;color:var(--peach)}
+    .feature small{display:block;font-weight:500;text-transform:none;letter-spacing:0;color:#cfe0d5;font-size:11px}
+
+    section{padding:88px 0}
+    .section-head{display:flex;justify-content:space-between;align-items:end;gap:25px;margin-bottom:34px}
+    .section-head h2{font-size:clamp(30px,4vw,44px);color:var(--green);margin-top:12px}
+    .section-head p{max-width:440px;color:var(--muted);font-size:15px;margin:0}
+
+    .welcome{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
+    .welcome h2{font-size:clamp(30px,4vw,44px);color:var(--green);margin:12px 0 18px}
+    .welcome p{color:var(--muted);font-size:15px;margin:0 0 16px}
+    .rent{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .rent div{background:var(--cream);border:1px solid var(--line);border-radius:6px;padding:24px}
+    .rent svg{width:38px;height:38px;color:var(--rust);margin-bottom:12px}
+    .rent h3{font:700 15px "DM Sans",sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--green);margin-bottom:6px}
+    .rent p{font-size:14px;margin:0;color:var(--muted)}
+
+    .units{background:var(--cream)}
+    .unit-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+    .unit{background:#fff;border:1px solid var(--line);border-radius:6px;overflow:hidden;display:flex;flex-direction:column}
+    .unit-photos{display:grid;grid-template-columns:2fr 1fr;grid-template-rows:150px 150px;gap:4px;cursor:pointer;position:relative}
+    .unit-photos img:first-child{grid-row:span 2}
+    .unit-photos .count{position:absolute;right:12px;bottom:12px;background:#000000a6;color:#fff;font-size:12px;padding:5px 10px;border-radius:3px}
+    .unit-body{padding:24px;display:flex;flex-direction:column;flex:1}
+    .unit-title{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+    .unit-title h3{font-size:30px;color:var(--green)}
+    .unit-title span{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--rust);font-weight:700}
+    .unit-body > p{color:var(--muted);font-size:14px;margin:8px 0 16px}
+    .checks{list-style:none;padding:0;margin:0 0 20px;display:grid;grid-template-columns:1fr 1fr;gap:7px 16px;font-size:13px;color:#33443a}
+    .checks li{display:flex;gap:8px;align-items:flex-start}
+    .checks li::before{content:"";flex:none;width:16px;height:16px;margin-top:2px;border-radius:50%;background:var(--green) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 8.2l2.2 2.2 4.8-4.8' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat}
+    .unit-foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid #eee;padding-top:16px}
+    .unit-foot .meta{font-size:13px;color:var(--muted)}
+    .unit-foot .meta b{color:var(--green)}
+    .unit-actions{display:flex;gap:16px;align-items:center}
+    .link-btn{background:none;border:0;color:var(--green);font-weight:700;font-size:13px;cursor:pointer;border-bottom:1px solid var(--rust);padding:0 0 2px}
+    .identical{text-align:center;margin:28px auto 0;max-width:620px;font-size:15px;color:var(--green)}
+    .identical b{display:block;font-family:"Playfair Display",serif;font-weight:500;font-size:22px}
+
+    .nearby-grid{display:grid;grid-template-columns:1fr 1.15fr;gap:56px;align-items:start}
+    .nearby-copy h2{font-size:clamp(30px,4vw,44px);color:var(--green);margin:12px 0 18px}
+    .nearby-copy p{color:var(--muted);font-size:15px;margin:0 0 24px}
+    .nearby-photo{height:300px;border-radius:6px;overflow:hidden}
+    .places{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:6px;overflow:hidden;columns:2;column-gap:0}
+    .places li{display:flex;justify-content:space-between;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line);font-size:14px;break-inside:avoid;background:#fff}
+    .places li:nth-child(odd){background:#fdfbf7}
+    .places b{color:var(--rust);font-weight:700;white-space:nowrap;display:flex;align-items:center;gap:4px}
+    .places b svg{width:13px;height:13px}
+
+    .values{background:var(--cream)}
+    .value-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+    .value{padding:24px 20px;border-top:2px solid var(--rust);background:#fff;border-radius:0 0 6px 6px}
+    .value svg{width:34px;height:34px;color:var(--rust);margin-bottom:14px}
+    .value h3{font:700 14px/1.35 "DM Sans",sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--green);margin-bottom:8px}
+    .value p{font-size:14px;color:var(--muted);margin:0}
+
+    .partner{background:var(--green);color:#fff;border-radius:8px;padding:44px;display:grid;grid-template-columns:1.4fr 1fr;gap:40px;align-items:center}
+    .partner .eyebrow{color:var(--peach)}
+    .partner h2{font-size:clamp(28px,3.4vw,38px);margin:12px 0 14px}
+    .partner p{color:#d5e3da;font-size:15px;margin:0}
+    .partner ul{list-style:none;margin:0 0 22px;padding:0;display:grid;gap:10px;font-size:14px}
+    .partner li::before{content:"✓";color:var(--peach);margin-right:10px;font-weight:700}
+
+    .quote{background:var(--green-deep);color:#fff;padding:70px 24px;text-align:center}
+    .quote blockquote{font:italic clamp(28px,3.4vw,42px)/1.25 "Playfair Display",serif;max-width:800px;margin:0 auto 16px}
+    .quote span{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--peach)}
+
+    .contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:55px}
+    .contact h2{font-size:clamp(34px,4vw,43px);color:var(--green);margin:12px 0 18px}
+    .contact-copy > p{font-size:15px;color:var(--muted);max-width:440px}
+    .call{display:flex;align-items:center;gap:16px;margin:28px 0 22px}
+    .call .circle{width:58px;height:58px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;flex:none}
+    .call .circle svg{width:26px;height:26px}
+    .call small{display:block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+    .call a{font-size:28px;font-weight:700;color:var(--green);letter-spacing:.01em}
+    .contact-details{display:grid;gap:12px;font-size:14px;color:#46574d}
+    .contact-details div{display:flex;gap:10px}
+    .contact-details svg{width:18px;height:18px;color:var(--rust);flex:none;margin-top:2px}
+    .contact-details a{color:var(--green);font-weight:600}
+    .contact-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
+    .contact-form{background:var(--cream);padding:28px;display:grid;gap:13px;border-radius:6px;align-content:start}
+    .contact-form h3{font-size:24px;color:var(--green);margin-bottom:4px}
+    .contact-form input,.contact-form textarea,.contact-form select{width:100%;padding:13px;border:1px solid #e0ddd3;font:14px "DM Sans",sans-serif;background:#fff;border-radius:3px;color:var(--ink)}
+    .contact-form textarea{min-height:100px;resize:vertical}
+    .contact-form .row{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+    .contact-form label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;display:grid;gap:5px}
+    .hp{position:absolute;left:-9999px}
+    .form-status{font-size:13px;margin:0;min-height:20px}
+    .form-status.ok{color:var(--green);font-weight:600}.form-status.err{color:#b3261e}
+
+    footer{background:var(--green-deep);color:#fff;padding:42px 0 30px}
+    .footer-row{display:flex;justify-content:space-between;gap:25px;align-items:center}
+    .footer-brand{background:#fff;border-radius:6px;padding:10px 14px;display:inline-block}
+    .footer-brand img{height:44px;width:auto;object-fit:contain}
+    footer p{font-size:12px;color:#bfd1c5;margin:0}
+    .footer-links{display:flex;gap:20px;font-size:13px;color:#e1e8e3;flex-wrap:wrap}
+    .fineprint{text-align:center;border-top:1px solid #2c5a40;margin-top:28px;padding-top:20px;color:#9fb6a7;font-size:11px}
+
+    .wa-float{position:fixed;right:18px;bottom:18px;z-index:30;width:56px;height:56px;border-radius:50%;background:#25d366;color:#fff;display:grid;place-items:center;box-shadow:0 6px 20px #0003}
+    .wa-float svg{width:30px;height:30px}
+
+    dialog{border:0;padding:0;border-radius:8px;width:min(980px,calc(100% - 24px));max-height:calc(100vh - 32px);box-shadow:0 20px 60px #0005}
+    dialog::backdrop{background:#0b1a12cc}
+    .dlg-head{display:flex;justify-content:space-between;align-items:start;gap:16px;padding:20px 24px 14px}
+    .dlg-head h3{font-size:30px;color:var(--green)}
+    .dlg-close{background:var(--cream);border:0;width:38px;height:38px;border-radius:50%;font-size:22px;cursor:pointer;color:var(--green);flex:none;line-height:1}
+    .viewer{position:relative;background:#111;height:min(62vh,560px)}
+    .viewer img{object-fit:contain}
+    .viewer .nav-btn{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;border:0;background:#fffe;color:var(--green);font-size:24px;cursor:pointer;line-height:1}
+    .viewer .prev{left:12px}.viewer .next{right:12px}
+    .viewer .pos{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);color:#fff;background:#0008;font-size:12px;padding:4px 10px;border-radius:12px}
+    .thumbs{display:flex;gap:8px;overflow-x:auto;padding:12px 24px}
+    .thumbs button{flex:none;width:84px;height:62px;border:2px solid transparent;padding:0;border-radius:4px;overflow:hidden;cursor:pointer;opacity:.7}
+    .thumbs button.on{border-color:var(--rust);opacity:1}
+    .dlg-body{padding:6px 24px 26px;display:grid;grid-template-columns:1.4fr 1fr;gap:28px}
+    .dlg-body p{color:var(--muted);font-size:14px;margin:0 0 12px}
+    .dlg-facts{background:var(--cream);border-radius:6px;padding:18px;font-size:13px;display:grid;gap:8px;align-content:start}
+    .dlg-facts b{color:var(--green)}
+
+    @media(max-width:960px){
+      nav.main{display:none}.menu{display:block}.nav .btn{margin-left:auto}
+      .hero-grid{grid-template-columns:1fr;gap:25px}.hero-photo{height:420px}.badge{right:12px}
+      .feature-row{grid-template-columns:repeat(3,1fr);row-gap:22px}
+      .welcome,.nearby-grid,.partner{grid-template-columns:1fr;gap:32px}
+      .unit-grid{grid-template-columns:1fr}
+      .value-grid{grid-template-columns:1fr 1fr}
+      .dlg-body{grid-template-columns:1fr}
+    }
+    @media(max-width:600px){
+      .wrap{width:calc(100% - 32px)}.topline{font-size:10px}.nav{height:68px}.brand img{height:42px}
+      .nav .btn{padding:10px 12px;font-size:11px}
+      .hero{padding-top:14px}.hero-grid{min-height:0}.hero-photo{height:320px}.photo-note{left:10px;bottom:12px;max-width:210px}.badge{display:none}
+      .feature-row{grid-template-columns:repeat(2,1fr)}
+      section{padding:62px 0}.section-head{display:block}.section-head p{margin-top:14px}
+      .rent,.checks,.value-grid{grid-template-columns:1fr}
+      .unit-photos{grid-template-rows:110px 110px}
+      .places{columns:1}
+      .partner{padding:28px 22px}
+      .contact-grid{grid-template-columns:1fr}.call a{font-size:24px}
+      .contact-form{padding:20px}.contact-form .row{grid-template-columns:1fr}
+      .footer-row{align-items:flex-start;flex-direction:column}
+      .dlg-head{padding:16px}.dlg-head h3{font-size:24px}.thumbs{padding:10px 16px}.dlg-body{padding:6px 16px 20px}.viewer{height:48vh}
+    }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-bed" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 25V8M3 19h26v6M29 19v-3a4 4 0 0 0-4-4H14v7"/><circle cx="8.5" cy="14.5" r="2.5"/></symbol>
+      <symbol id="i-wifi" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12a17 17 0 0 1 24 0M8 16.5a11 11 0 0 1 16 0M12 21a5 5 0 0 1 8 0"/><circle cx="16" cy="25" r="1.4" fill="currentColor"/></symbol>
+      <symbol id="i-car" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22v-6l3-7h16l3 7v6zM5 16h22M7 22v3M25 22v3"/><circle cx="10" cy="19" r="1" fill="currentColor"/><circle cx="22" cy="19" r="1" fill="currentColor"/></symbol>
+      <symbol id="i-pot" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14h20v8a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4zM3 14h3M26 14h3M11 14V12a5 5 0 0 1 10 0v2M16 7V5"/></symbol>
+      <symbol id="i-tv" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="24" height="16" rx="2"/><path d="M11 28h10M12 4l4 4 4-4M14 13l5 3-5 3z"/></symbol>
+      <symbol id="i-balcony" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15h24M4 27h24M6 15v12M11 15v12M16 15v12M21 15v12M26 15v12M10 15V5h12v10"/></symbol>
+      <symbol id="i-people" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="10" r="4"/><circle cx="22" cy="11" r="3.2"/><path d="M3 26c0-5 3.6-8 8-8s8 3 8 8M19 18.6c4.6-1 9 1.7 9 7.4"/></symbol>
+      <symbol id="i-home" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15 16 5l12 10M7 13v14h18V13"/><path d="M16 24s-5-3-5-6.2A2.6 2.6 0 0 1 16 16.5a2.6 2.6 0 0 1 5 1.3C21 21 16 24 16 24z"/></symbol>
+      <symbol id="i-shield" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3 5 7v8c0 7 5 12 11 14 6-2 11-7 11-14V7z"/><path d="m11 16 3.5 3.5L21 13"/></symbol>
+      <symbol id="i-hands" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 15s-5-3-5-6.5A2.8 2.8 0 0 1 16 7a2.8 2.8 0 0 1 5 1.5C21 12 16 15 16 15z"/><path d="M3 17l5 9h6v-5l-4-5M29 17l-5 9h-6v-5l4-5"/></symbol>
+      <symbol id="i-leaf" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 28V12M16 20c-6 0-10-4-10-11 6 0 10 4 10 11zM16 16c0-6 4-10 10-10 0 6-4 10-10 10z"/></symbol>
+      <symbol id="i-phone" viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></symbol>
+      <symbol id="i-pin" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></symbol>
+      <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></symbol>
+      <symbol id="i-wa" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.25-.12-1.47-.72-1.7-.8s-.39-.12-.56.12-.64.8-.78.97-.29.18-.54.06a6.7 6.7 0 0 1-3.3-2.9c-.25-.43.25-.4.71-1.33a.45.45 0 0 0-.02-.42c-.06-.12-.56-1.34-.76-1.84s-.4-.41-.56-.42h-.48a.92.92 0 0 0-.67.31 2.8 2.8 0 0 0-.87 2.08 4.9 4.9 0 0 0 1.02 2.6 11.2 11.2 0 0 0 4.3 3.8c1.6.69 2.23.75 3.03.63a2.6 2.6 0 0 0 1.7-1.2 2.1 2.1 0 0 0 .15-1.2c-.06-.1-.23-.17-.48-.29z"/></symbol>
+    </defs>
+  </svg>
+
+  <div class="topline">YOUR COZY HOME AWAY FROM HOME IN TRIVANDRUM, KERALA · <a href="tel:+919446541346" class="js-phone-link"><span class="js-phone">+91 94465 41346</span></a></div>
+  <header>
+    <div class="wrap nav">
+      <a class="brand" href="#home" aria-label="HOM – Feel at Home, home"><img src="images/logo.png" alt="HOM – Feel at Home" width="88" height="52"></a>
+      <nav class="main" aria-label="Main navigation">
+        <a href="#welcome">Welcome</a><a href="#units">Our Units</a><a href="#nearby">Location</a><a href="#partners">Hotels &amp; Resorts</a><a href="#contact">Contact</a>
+      </nav>
+      <a class="btn" href="#contact">BOOK YOUR STAY</a>
+      <button class="menu" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="mobileNav">☰</button>
+    </div>
+    <nav class="mobile-nav" id="mobileNav" aria-label="Mobile navigation">
+      <a href="#welcome">Welcome</a><a href="#units">Our Units</a><a href="#nearby">Location</a><a href="#partners">Hotels &amp; Resorts</a><a href="#contact">Contact</a>
+    </nav>
+  </header>
+
+  <main id="home">
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <div class="eyebrow">HOM · Feel at Home!</div>
+          <h1>Your cozy home away from home in <em>Trivandrum.</em></h1>
+          <p>Two comfortable, fully furnished 2-bedroom homes near Akkulam. Calm, safe and close to everything, whether you're here for business, medical care or a holiday.</p>
+          <div class="pill">Comfort <i>•</i> Convenience <i>•</i> Connectivity</div>
+          <div class="hero-actions"><a class="btn" href="#units">SEE OUR UNITS</a><a class="btn rust js-wa" href="#contact" target="_blank" rel="noopener"><svg><use href="#i-wa"/></svg>WHATSAPP US</a></div>
+        </div>
+        <div class="hero-photo">
+          <img src="images/garden-porch.jpg" alt="Sunny sit-out at HOM with a teak front door and garden planters" fetchpriority="high">
+          <div class="badge">A warm stay for every journey<span>♥</span></div>
+          <div class="photo-note"><strong>Relax. Recharge.<br>Feel at Home!</strong><span>Clean, safe and cared for.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="features" aria-label="What every unit includes">
+      <div class="wrap feature-row">
+        <div class="feature"><svg><use href="#i-bed"/></svg>2 Bedrooms<small>AC rooms</small></div>
+        <div class="feature"><svg><use href="#i-wifi"/></svg>Free WiFi<small>Stay connected</small></div>
+        <div class="feature"><svg><use href="#i-car"/></svg>Safe Parking<small>Inside the gate</small></div>
+        <div class="feature"><svg><use href="#i-pot"/></svg>Kitchen<small>For light cooking</small></div>
+        <div class="feature"><svg><use href="#i-tv"/></svg>Smart TV<small>&amp; comfort</small></div>
+        <div class="feature"><svg><use href="#i-balcony"/></svg>Balcony<small>To unwind</small></div>
+      </div>
+    </div>
+
+    <section id="welcome">
+      <div class="wrap welcome">
+        <div>
+          <div class="eyebrow">Welcome to HOM – Feel at Home!</div>
+          <h2>Two comfortable units. Choose what suits you best.</h2>
+          <p>Stay in a calm, safe and friendly neighbourhood with excellent connectivity. Whether you're here for business or a holiday, HOM offers a cozy home-away-from-home experience.</p>
+          <p>We have two identical, well-appointed 2-bedroom units. Rent a single unit, or take both together. It's perfect for families, groups and business travellers.</p>
+        </div>
+        <div class="rent">
+          <div><svg><use href="#i-people"/></svg><h3>Rent individually</h3><p>Each unit accommodates 4 adults and 2 kids.</p></div>
+          <div><svg><use href="#i-home"/></svg><h3>Rent together</h3><p>Book both units as one combined home to suit your needs.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="units" id="units">
+      <div class="wrap">
+        <div class="section-head"><div><div class="eyebrow">Our units</div><h2>Everything you need, in both homes</h2></div><p>Tap a unit to see all its photos.</p></div>
+        <div class="unit-grid" id="unitList"></div>
+        <p class="identical"><b>Both units are identical in layout, features and comfort.</b>Enjoy the same great experience whether you book one or both.</p>
+      </div>
+    </section>
+
+    <section id="nearby">
+      <div class="wrap nearby-grid">
+        <div class="nearby-copy">
+          <div class="eyebrow">Location</div>
+          <h2>Close to everything that matters.</h2>
+          <p>Near Akkulam in Sreekariyam, HOM is minutes from Technopark, leading hospitals, Lulu Mall and the railway station, and a short drive from the airport and Trivandrum's beaches.</p>
+          <div class="nearby-photo"><img src="images/apt-balcony.jpg" alt="View from the balcony over the quiet neighbourhood" loading="lazy"></div>
+        </div>
+        <ul class="places" id="placeList" aria-label="Distances from HOM"></ul>
+      </div>
+    </section>
+
+    <section class="values">
+      <div class="wrap">
+        <div class="section-head"><div><div class="eyebrow">Why HOM</div><h2>Stay with confidence</h2></div></div>
+        <div class="value-grid">
+          <div class="value"><svg><use href="#i-shield"/></svg><h3>Clean · Safe · Secure</h3><p>Your comfort and safety are our top priority.</p></div>
+          <div class="value"><svg><use href="#i-people"/></svg><h3>Ideal for families, groups &amp; business travellers</h3><p>Space for 4 adults and 2 kids per unit, or book both.</p></div>
+          <div class="value"><svg><use href="#i-hands"/></svg><h3>Feel the warmth of Kerala hospitality</h3><p>Friendly, personal help before and during your stay.</p></div>
+          <div class="value"><svg><use href="#i-leaf"/></svg><h3>Great value</h3><p>Home comforts at a fair price for families, friends and business travellers.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="partners">
+      <div class="wrap">
+        <div class="partner">
+          <div><div class="eyebrow">Hotels &amp; resorts · Powered by STAYO</div>
+            <h2>Travelling further in Kerala?</h2>
+            <p>HOM is part of STAYO, which works directly with hotels and resorts across Kerala. Ask us before you book, and we can often get you a better rate than you'll find online.</p></div>
+          <div><ul><li>Beach, backwater and hill-station resorts</li><li>City hotels for work trips</li><li>Special partner rates</li></ul>
+            <a class="btn light" href="#contact" data-interest="Partner hotel / resort">ASK FOR PARTNER RATES</a></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="quote"><blockquote>Relax. Recharge. Feel at Home!</blockquote><span>HOM · A warm stay for every journey</span></div>
+
+    <section class="contact" id="contact">
+      <div class="wrap contact-grid">
+        <div class="contact-copy"><div class="eyebrow">Book your stay</div><h2>Let's plan your stay.</h2>
+          <p>Call or WhatsApp us with your dates and number of guests, or send the form. We'll confirm availability and rates quickly.</p>
+          <div class="call"><span class="circle"><svg><use href="#i-phone"/></svg></span><div><small>Call / WhatsApp</small><a href="tel:+919446541346" class="js-phone-link js-phone">+91 94465 41346</a></div></div>
+          <div class="contact-details" id="contactDetails"></div>
+          <div class="contact-actions"><a class="btn rust js-wa" href="#" target="_blank" rel="noopener"><svg><use href="#i-wa"/></svg>CHAT ON WHATSAPP</a><a class="btn js-phone-link" href="tel:+919446541346"><svg><use href="#i-phone"/></svg>CALL NOW</a></div>
+        </div>
+        <form class="contact-form" id="contactForm" novalidate>
+          <h3>Send an enquiry</h3>
+          <div class="row"><input name="name" placeholder="Your name" autocomplete="name" required><input name="phone" placeholder="Mobile / WhatsApp number" autocomplete="tel" inputmode="tel"></div>
+          <input name="email" type="email" placeholder="Email address (optional)" autocomplete="email">
+          <div class="row">
+            <select name="interest" id="interest" aria-label="Which unit"><option value="">Which unit?</option><option>Unit 1 (Ground floor)</option><option>Unit 2 (First floor)</option><option>Both units together</option><option>Partner hotel / resort</option></select>
+            <select name="guests" aria-label="Guests"><option value="">Guests</option><option>1–2 guests</option><option>3–4 guests</option><option>4 adults + 2 kids</option><option>More than 6 guests</option></select>
+          </div>
+          <div class="row"><label>Check-in<input name="checkin" type="date"></label><label>Check-out<input name="checkout" type="date"></label></div>
+          <textarea name="message" placeholder="Anything else we should know? (purpose of visit, arrival time, special requests)"></textarea>
+          <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <button class="btn" type="submit">SEND ENQUIRY</button>
+          <p class="form-status" id="formStatus" role="status"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer><div class="wrap"><div class="footer-row">
+    <a class="footer-brand" href="#home"><img src="images/logo.png" alt="HOM – Feel at Home" width="75" height="44"></a>
+    <div class="footer-links"><a href="#units">Our Units</a><a href="#nearby">Location</a><a href="#partners">Hotels &amp; Resorts</a><a href="#contact">Contact</a></div>
+    <p>A STAYO hospitality brand</p>
+  </div><div class="fineprint">© <span id="year"></span> HOM · Feel at Home · Near Akkulam, Sreekariyam PO, Trivandrum 695017</div></div></footer>
+
+  <a class="wa-float js-wa" href="#" target="_blank" rel="noopener" aria-label="Chat with HOM on WhatsApp"><svg><use href="#i-wa"/></svg></a>
+
+  <dialog id="stayDialog" aria-labelledby="dlgTitle">
+    <div class="dlg-head"><div><div class="eyebrow" id="dlgPlace"></div><h3 id="dlgTitle"></h3></div><button class="dlg-close" id="dlgClose" aria-label="Close">×</button></div>
+    <div class="viewer"><img id="dlgImg" alt=""><button class="nav-btn prev" id="dlgPrev" aria-label="Previous photo">‹</button><button class="nav-btn next" id="dlgNext" aria-label="Next photo">›</button><span class="pos" id="dlgPos"></span></div>
+    <div class="thumbs" id="dlgThumbs"></div>
+    <div class="dlg-body"><div><p id="dlgSummary"></p><p id="dlgDetails"></p></div><div class="dlg-facts" id="dlgFacts"></div></div>
+  </dialog>
+
+  <script src="config.js"></script>
+  <script>
+  (function(){
+    const CFG = window.HOM_CONFIG || {};
+    const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    $('#year').textContent = new Date().getFullYear();
+
+    // Built-in content (mirrors the Google Sheet). Replaced by live data when API_URL is set.
+    const AMEN = ['2 Bedrooms (AC)','2 Attached Bathrooms with Hot Water','Kitchen for Light Cooking','Living & Dining Area','Smart TV','Balcony','Free WiFi','Safe Parking'];
+    const DETAILS = 'Each unit accommodates 4 adults and 2 kids. Rent one unit, or book both units together as one combined home for families, groups or business travellers. Both units are identical in layout, features and comfort.';
+    let STAYS = [
+      { id:'unit-1', name:'Unit 1', type:'Ground floor unit', location:'Near Akkulam · Trivandrum', tag:'2 Bedrooms · AC',
+        summary:'A well-appointed 2-bedroom home on the ground floor, with air-conditioned rooms, attached bathrooms and a kitchen for light cooking.',
+        details:DETAILS, guests:'4 adults + 2 kids', bedrooms:2, priceNote:'Call or WhatsApp for rates', cover:'images/apt-bedroom.jpg',
+        photos:['images/apt-bedroom.jpg','images/apt-living.jpg','images/apt-kitchen.jpg','images/apt-bath.jpg','images/apt-bedroom-2.jpg','images/apt-bedroom-desk.jpg','images/apt-living-dining.jpg','images/apt-dining.jpg','images/apt-balcony.jpg'], amenities:AMEN },
+      { id:'unit-2', name:'Unit 2', type:'First floor unit', location:'Near Akkulam · Trivandrum', tag:'2 Bedrooms · AC',
+        summary:'An identical 2-bedroom home on the first floor, with the same comfort, features and space to relax.',
+        details:DETAILS, guests:'4 adults + 2 kids', bedrooms:2, priceNote:'Call or WhatsApp for rates', cover:'images/garden-porch.jpg',
+        photos:['images/garden-porch.jpg','images/garden-living.jpg','images/garden-living-2.jpg','images/garden-dining.jpg','images/garden-bedroom.jpg','images/garden-bedroom-2.jpg','images/garden-twin.jpg','images/garden-bath.jpg','images/garden-driveway.jpg'], amenities:AMEN }
+    ];
+    let NEARBY = [['NISH','800 m'],['Akkulam Tourist Village','1 km'],['KIMS Hospital','3 km'],['Lulu Mall','4 km'],['Technopark','5 km'],['Kochuveli Railway Station','5 km'],['RCC (Regional Cancer Centre)','5.5 km'],['Ananthapuri Hospital','7.5 km'],['Greenfield Stadium','8 km'],['Trivandrum International Airport','8 km'],['Napier Museum','9 km'],['Shanghumukham Beach','10 km'],['Sree Padmanabhaswamy Temple','10 km'],['Magic Planet','13 km'],['Kovalam Beach','22 km'],['Varkala Beach','35 km']].map(([place,distance])=>({place,distance}));
+    let SETTINGS = Object.assign({}, CFG);
+
+    const price = s => s.priceFrom ? ('From ₹' + Number(s.priceFrom).toLocaleString('en-IN') + ' / night') : (s.priceNote || 'Call or WhatsApp for rates');
+
+    function renderUnits(){
+      $('#unitList').innerHTML = STAYS.map((s,i) => {
+        const p = s.photos.length ? s.photos : [s.cover];
+        return `<article class="unit">
+          <div class="unit-photos" data-open="${i}" role="button" tabindex="0" aria-label="See all photos of ${esc(s.name)}">
+            ${p.slice(0,3).map((src,j)=>`<img src="${esc(src)}" alt="${j?'':esc(s.name)}" loading="lazy">`).join('')}
+            ${p.length > 3 ? `<span class="count">+${p.length-3} photos</span>` : ''}
+          </div>
+          <div class="unit-body">
+            <div class="unit-title"><h3>${esc(s.name)}</h3><span>${esc(s.type)}</span></div>
+            <p>${esc(s.summary)}</p>
+            <ul class="checks">${(s.amenities||[]).map(a=>`<li>${esc(a)}</li>`).join('')}</ul>
+            <div class="unit-foot"><span class="meta"><b>${esc(s.guests)}</b> · ${esc(price(s))}</span>
+              <span class="unit-actions"><button class="link-btn" data-open="${i}">View photos</button><a class="btn rust" href="#contact" data-interest="${esc(s.name)} (${esc(s.type.replace(/ unit$/i,''))})">BOOK ${esc(s.name.toUpperCase())}</a></span></div>
+          </div></article>`;
+      }).join('');
+    }
+    function renderNearby(){
+      $('#placeList').innerHTML = NEARBY.map(n => `<li><span>${esc(n.place)}</span><b><svg><use href="#i-pin"/></svg>${esc(n.distance)}</b></li>`).join('');
+    }
+    function renderContact(){
+      const s = SETTINGS, phone = s.public_phone || '', tel = phone.replace(/[^\d+]/g,'');
+      $$('.js-phone').forEach(e => e.textContent = phone);
+      $$('.js-phone-link').forEach(e => { e.href = 'tel:' + tel; e.hidden = !tel; });
+      const rows = [];
+      if (s.address) rows.push(`<div><svg><use href="#i-pin"/></svg><span>${esc(s.address)}</span></div>`);
+      if (s.public_email) rows.push(`<div><svg><use href="#i-mail"/></svg><a href="mailto:${esc(s.public_email)}">${esc(s.public_email)}</a></div>`);
+      if (s.hours) rows.push(`<div><svg><use href="#i-phone"/></svg><span>${esc(s.hours)}</span></div>`);
+      $('#contactDetails').innerHTML = rows.join('');
+      const wa = waLink('Hi HOM, I would like to enquire about a stay.');
+      $$('.js-wa').forEach(e => { e.hidden = !wa; if (wa) e.href = wa; });
+    }
+    function waLink(text){ const n = String(SETTINGS.whatsapp || '').replace(/\D/g,''); return n ? 'https://wa.me/' + n + '?text=' + encodeURIComponent(text) : ''; }
+
+    // Photo gallery
+    const dlg = $('#stayDialog'); let cur = null, idx = 0;
+    function show(i){ const p = cur.photos; idx = (i + p.length) % p.length;
+      $('#dlgImg').src = p[idx]; $('#dlgImg').alt = cur.name + ', photo ' + (idx+1);
+      $('#dlgPos').textContent = (idx+1) + ' / ' + p.length;
+      [...$('#dlgThumbs').children].forEach((b,j) => b.classList.toggle('on', j===idx));
+      $('#dlgThumbs').children[idx]?.scrollIntoView({block:'nearest', inline:'center'});
+    }
+    function openStay(i){ cur = STAYS[i]; if (!cur) return;
+      if (!cur.photos.length) cur.photos = [cur.cover];
+      $('#dlgTitle').textContent = cur.name + ' · ' + cur.type; $('#dlgPlace').textContent = cur.location;
+      $('#dlgSummary').textContent = cur.summary || ''; $('#dlgDetails').textContent = cur.details || '';
+      $('#dlgFacts').innerHTML = `<div><b>Bedrooms:</b> ${esc(cur.bedrooms)} (AC)</div><div><b>Sleeps:</b> ${esc(cur.guests)}</div><div><b>Rates:</b> ${esc(price(cur))}</div><a class="btn rust" href="#contact" data-interest="${esc(cur.name)} (${esc(cur.type.replace(/ unit$/i,''))})" style="margin-top:8px">BOOK ${esc(cur.name.toUpperCase())}</a>`;
+      $('#dlgThumbs').innerHTML = cur.photos.map((p,j)=>`<button data-j="${j}" aria-label="Photo ${j+1}"><img src="${esc(p)}" alt="" loading="lazy"></button>`).join('');
+      dlg.showModal(); show(0);
+    }
+    $('#dlgPrev').onclick = () => show(idx-1); $('#dlgNext').onclick = () => show(idx+1);
+    $('#dlgClose').onclick = () => dlg.close();
+    dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+    $('#dlgThumbs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) show(+b.dataset.j); });
+    document.addEventListener('keydown', e => {
+      if (dlg.open) { if (e.key==='ArrowLeft') show(idx-1); if (e.key==='ArrowRight') show(idx+1); return; }
+      const o = e.target.closest && e.target.closest('.unit-photos'); if (o && (e.key==='Enter'||e.key===' ')) { e.preventDefault(); openStay(+o.dataset.open); }
+    });
+    function chooseInterest(v){ const sel = $('#interest'); const m = [...sel.options].find(o => o.text === v || o.text.startsWith(v.split(' (')[0])); if (m) sel.value = m.text; else { sel.add(new Option(v)); sel.value = v; } }
+    document.addEventListener('click', e => {
+      const o = e.target.closest('[data-open]'); if (o) { openStay(+o.dataset.open); return; }
+      const q = e.target.closest('[data-interest]'); if (q) { chooseInterest(q.dataset.interest); if (dlg.open) dlg.close(); }
+    });
+
+    // Mobile menu
+    const mb = $('#menuBtn'), mn = $('#mobileNav');
+    const setMenu = open => { mn.classList.toggle('open', open); mb.setAttribute('aria-expanded', open); mb.textContent = open ? '×' : '☰'; };
+    mb.onclick = () => setMenu(!mn.classList.contains('open'));
+    mn.addEventListener('click', e => { if (e.target.tagName === 'A') setMenu(false); });
+
+    // Dates
+    const cf = $('#contactForm');
+    const today = new Date(Date.now() - new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+    cf.checkin.min = cf.checkout.min = today;
+    cf.checkin.addEventListener('change', () => { cf.checkout.min = cf.checkin.value || today; if (cf.checkout.value && cf.checkout.value <= cf.checkin.value) cf.checkout.value = ''; });
+
+    // Enquiries: saved to the Google Sheet when API_URL is set, otherwise sent via WhatsApp.
+    cf.addEventListener('submit', async e => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(cf).entries());
+      const status = $('#formStatus'), btn = cf.querySelector('button[type=submit]');
+      if (!data.name || (!data.phone && !data.email)) { status.className='form-status err'; status.textContent='Please add your name and a phone number or email so we can reply.'; return; }
+      btn.disabled = true; status.className='form-status'; status.textContent='Sending…';
+      try {
+        if (CFG.API_URL) {
+          const r = await fetch(CFG.API_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({type:'enquiry', source:'website'}, data)) });
+          const j = await r.json();
+          if (j.ok) { status.className='form-status ok'; status.textContent='Thank you! Your enquiry reference is ' + j.reference + '. We will call or WhatsApp you shortly.'; cf.reset(); return; }
+          if (j.error) { status.className='form-status err'; status.textContent=j.error; return; }
+        }
+        throw new Error('no api');
+      } catch (err) {
+        const lines = ['Hi HOM, I would like to enquire about a stay.', 'Name: ' + data.name];
+        [['interest','Unit'],['guests','Guests'],['checkin','Check-in'],['checkout','Check-out'],['phone','Phone'],['email','Email'],['message','Note']].forEach(([k,l]) => { if (data[k]) lines.push(l + ': ' + data[k]); });
+        const wa = waLink(lines.join('\n'));
+        if (wa) { window.open(wa, '_blank', 'noopener'); status.className='form-status ok'; status.textContent='WhatsApp has opened with your enquiry. Just press send.'; }
+        else { location.href = 'mailto:' + SETTINGS.public_email + '?subject=' + encodeURIComponent('HOM enquiry') + '&body=' + encodeURIComponent(lines.join('\n')); }
+      } finally { btn.disabled = false; }
+    });
+
+    renderUnits(); renderNearby(); renderContact();
+
+    // Live content from the Google Sheet (via the Apps Script web app)
+    if (CFG.API_URL) {
+      fetch(CFG.API_URL + '?action=site').then(r => r.json()).then(j => {
+        if (!j.ok) return;
+        if (j.stays && j.stays.length) { STAYS = j.stays.map(s => Object.assign({photos:[], amenities:[]}, s)); renderUnits(); }
+        if (j.nearby && j.nearby.length) { NEARBY = j.nearby; renderNearby(); }
+        if (j.settings) { SETTINGS = Object.assign(SETTINGS, j.settings); renderContact(); }
+      }).catch(() => {});
+    }
+  })();
+  </script>
+</body>
+</html>
