@@ -207,6 +207,14 @@
       .contact-grid{grid-template-columns:1fr}.call a{font-size:24px}
       .contact-form{padding:20px}.contact-form .row{grid-template-columns:1fr}
       .footer-row{align-items:flex-start;flex-direction:column}
+      .contact-form input,.contact-form textarea,.contact-form select{font-size:16px}
+      .topline{font-size:11px}.topline a{display:inline-block;padding:6px 2px}
+      .menu{min-width:44px;min-height:44px}
+      .link-btn{padding:12px 0 4px}
+      .footer-links{gap:6px 22px}.footer-links a{display:inline-block;padding:10px 0}
+      .contact-details a{display:inline-block;padding:10px 0}.contact-details div{align-items:center}
+      .call a{display:inline-block;padding:6px 0}
+      .dlg-close{width:44px;height:44px}.thumbs button{width:72px;height:54px}
       .dlg-head{padding:16px}.dlg-head h3{font-size:24px}.thumbs{padding:10px 16px}.dlg-body{padding:6px 16px 20px}.viewer{height:48vh}
     }
   </style>
@@ -258,7 +266,7 @@
           <div class="hero-actions"><a class="btn" href="#units">SEE OUR UNITS</a><a class="btn rust js-wa" href="#contact" target="_blank" rel="noopener"><svg><use href="#i-wa"/></svg>WHATSAPP US</a></div>
         </div>
         <div class="hero-photo">
-          <img src="images/garden-porch.jpg" alt="Sunny sit-out at HOM with a teak front door and garden planters" fetchpriority="high">
+          <img src="images/garden-porch.jpg" srcset="images/sm/garden-porch.jpg 800w, images/garden-porch.jpg 1600w" sizes="(max-width:960px) 100vw, 620px" alt="Sunny sit-out at HOM with a teak front door and garden planters" fetchpriority="high">
           <div class="badge">A warm stay for every journey<span>♥</span></div>
           <div class="photo-note"><strong>Relax. Recharge.<br>Feel at Home!</strong><span>Clean, safe and cared for.</span></div>
         </div>
@@ -305,7 +313,7 @@
           <div class="eyebrow">Location</div>
           <h2>Close to everything that matters.</h2>
           <p>Near Akkulam in Sreekariyam, HOM is minutes from Technopark, leading hospitals, Lulu Mall and the railway station, and a short drive from the airport and Trivandrum's beaches.</p>
-          <div class="nearby-photo"><img src="images/apt-balcony.jpg" alt="View from the balcony over the quiet neighbourhood" loading="lazy"></div>
+          <div class="nearby-photo"><img src="images/apt-balcony.jpg" srcset="images/sm/apt-balcony.jpg 800w, images/apt-balcony.jpg 1600w" sizes="(max-width:960px) 100vw, 500px" alt="View from the balcony over the quiet neighbourhood" loading="lazy"></div>
         </div>
         <ul class="places" id="placeList" aria-label="Distances from HOM"></ul>
       </div>
@@ -402,6 +410,9 @@
     let NEARBY = [['NISH','800 m'],['Akkulam Tourist Village','1 km'],['KIMS Hospital','3 km'],['Lulu Mall','4 km'],['Technopark','5 km'],['Kochuveli Railway Station','5 km'],['RCC (Regional Cancer Centre)','5.5 km'],['Ananthapuri Hospital','7.5 km'],['Greenfield Stadium','8 km'],['Trivandrum International Airport','8 km'],['Napier Museum','9 km'],['Shanghumukham Beach','10 km'],['Sree Padmanabhaswamy Temple','10 km'],['Magic Planet','13 km'],['Kovalam Beach','22 km'],['Varkala Beach','35 km']].map(([place,distance])=>({place,distance}));
     let SETTINGS = Object.assign({}, CFG);
 
+    // Local photos have an 800px copy in images/sm/ for phones and thumbnails.
+    const small = src => /^images\/(?!sm\/)/.test(src) ? src.replace('images/', 'images/sm/') : src;
+    const srcset = src => small(src) === src ? '' : ` srcset="${esc(small(src))} 800w, ${esc(src)} 1600w"`;
     const price = s => s.priceFrom ? ('From ₹' + Number(s.priceFrom).toLocaleString('en-IN') + ' / night') : (s.priceNote || 'Call or WhatsApp for rates');
 
     function renderUnits(){
@@ -409,7 +420,7 @@
         const p = s.photos.length ? s.photos : [s.cover];
         return `<article class="unit">
           <div class="unit-photos" data-open="${i}" role="button" tabindex="0" aria-label="See all photos of ${esc(s.name)}">
-            ${p.slice(0,3).map((src,j)=>`<img src="${esc(src)}" alt="${j?'':esc(s.name)}" loading="lazy">`).join('')}
+            ${p.slice(0,3).map((src,j)=> j ? `<img src="${esc(small(src))}" alt="" loading="lazy">` : `<img src="${esc(src)}"${srcset(src)} sizes="(max-width:960px) 66vw, 380px" alt="${esc(s.name)}" loading="lazy">`).join('')}
             ${p.length > 3 ? `<span class="count">+${p.length-3} photos</span>` : ''}
           </div>
           <div class="unit-body">
@@ -441,7 +452,7 @@
     // Photo gallery
     const dlg = $('#stayDialog'); let cur = null, idx = 0;
     function show(i){ const p = cur.photos; idx = (i + p.length) % p.length;
-      $('#dlgImg').src = p[idx]; $('#dlgImg').alt = cur.name + ', photo ' + (idx+1);
+      const im = $('#dlgImg'); im.removeAttribute('srcset'); if (small(p[idx]) !== p[idx]) { im.srcset = small(p[idx]) + ' 800w, ' + p[idx] + ' 1600w'; im.sizes = '(max-width:600px) 100vw, 980px'; } im.src = p[idx]; $('#dlgImg').alt = cur.name + ', photo ' + (idx+1);
       $('#dlgPos').textContent = (idx+1) + ' / ' + p.length;
       [...$('#dlgThumbs').children].forEach((b,j) => b.classList.toggle('on', j===idx));
       $('#dlgThumbs').children[idx]?.scrollIntoView({block:'nearest', inline:'center'});
@@ -451,7 +462,7 @@
       $('#dlgTitle').textContent = cur.name + ' · ' + cur.type; $('#dlgPlace').textContent = cur.location;
       $('#dlgSummary').textContent = cur.summary || ''; $('#dlgDetails').textContent = cur.details || '';
       $('#dlgFacts').innerHTML = `<div><b>Bedrooms:</b> ${esc(cur.bedrooms)} (AC)</div><div><b>Sleeps:</b> ${esc(cur.guests)}</div><div><b>Rates:</b> ${esc(price(cur))}</div><a class="btn rust" href="#contact" data-interest="${esc(cur.name)} (${esc(cur.type.replace(/ unit$/i,''))})" style="margin-top:8px">BOOK ${esc(cur.name.toUpperCase())}</a>`;
-      $('#dlgThumbs').innerHTML = cur.photos.map((p,j)=>`<button data-j="${j}" aria-label="Photo ${j+1}"><img src="${esc(p)}" alt="" loading="lazy"></button>`).join('');
+      $('#dlgThumbs').innerHTML = cur.photos.map((p,j)=>`<button data-j="${j}" aria-label="Photo ${j+1}"><img src="${esc(small(p))}" alt="" loading="lazy"></button>`).join('');
       dlg.showModal(); show(0);
     }
     $('#dlgPrev').onclick = () => show(idx-1); $('#dlgNext').onclick = () => show(idx+1);
