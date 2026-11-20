@@ -9,7 +9,7 @@
   <meta property="og:description" content="Your cozy home away from home in Trivandrum, Kerala. Comfort · Convenience · Connectivity.">
   <meta property="og:image" content="images/garden-porch.jpg">
   <meta name="theme-color" content="#024c23">
-  <meta name="hom-version" content="2026-11-19.1">
+  <meta name="hom-version" content="2026-11-20.1">
   <link rel="icon" type="image/png" href="images/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -359,7 +359,7 @@
           <div class="row"><input name="name" placeholder="Your name" autocomplete="name" required><input name="phone" placeholder="Mobile / WhatsApp number" autocomplete="tel" inputmode="tel"></div>
           <input name="email" type="email" placeholder="Email address (optional)" autocomplete="email">
           <div class="row">
-            <select name="interest" id="interest" aria-label="Which unit"><option value="">Which unit?</option><option>Unit 1 (Ground floor)</option><option>Unit 2 (First floor)</option><option>Both units together</option><option>Partner hotel / resort</option></select>
+            <select name="interest" id="interest" aria-label="Which unit"><option value="">Which unit?</option><option>HOM01</option><option>HOM02</option><option>Both units (HOM01 + HOM02)</option><option>Partner hotel / resort</option></select>
             <select name="guests" aria-label="Guests"><option value="">Guests</option><option>1–2 guests</option><option>3–4 guests</option><option>4 adults + 2 kids</option><option>More than 6 guests</option></select>
           </div>
           <div class="row"><label>Check-in<input name="checkin" type="date"></label><label>Check-out<input name="checkout" type="date"></label></div>
@@ -399,12 +399,12 @@
     const AMEN = ['2 Bedrooms (AC)','2 Attached Bathrooms with Hot Water','Kitchen for Light Cooking','Living & Dining Area','Smart TV','Balcony','Free WiFi','Safe Parking'];
     const DETAILS = 'Each unit accommodates 4 adults and 2 kids. Rent one unit, or book both units together as one combined home for families, groups or business travellers. Both units are identical in layout, features and comfort.';
     let STAYS = [
-      { id:'unit-1', name:'Unit 1', type:'Ground floor unit', location:'Near Akkulam · Trivandrum', tag:'2 Bedrooms · AC',
-        summary:'A well-appointed 2-bedroom home on the ground floor, with air-conditioned rooms, attached bathrooms and a kitchen for light cooking.',
+      { id:'unit-1', name:'HOM01', type:'Entire 2-bedroom home', location:'Near Akkulam · Trivandrum', tag:'2 Bedrooms · AC',
+        summary:'A well-appointed 2-bedroom home with air-conditioned rooms, attached bathrooms and a kitchen for light cooking.',
         details:DETAILS, guests:'4 adults + 2 kids', bedrooms:2, priceNote:'Call or WhatsApp for rates', cover:'images/apt-bedroom.jpg',
         photos:['images/apt-bedroom.jpg','images/apt-living.jpg','images/apt-kitchen.jpg','images/apt-bath.jpg','images/apt-bedroom-2.jpg','images/apt-bedroom-desk.jpg','images/apt-living-dining.jpg','images/apt-dining.jpg','images/apt-balcony.jpg'], amenities:AMEN },
-      { id:'unit-2', name:'Unit 2', type:'First floor unit', location:'Near Akkulam · Trivandrum', tag:'2 Bedrooms · AC',
-        summary:'An identical 2-bedroom home on the first floor, with the same comfort, features and space to relax.',
+      { id:'unit-2', name:'HOM02', type:'Entire 2-bedroom home', location:'Near Akkulam · Trivandrum', tag:'2 Bedrooms · AC',
+        summary:'An identical 2-bedroom home with the same comfort, features and space to relax.',
         details:DETAILS, guests:'4 adults + 2 kids', bedrooms:2, priceNote:'Call or WhatsApp for rates', cover:'images/garden-porch.jpg',
         photos:['images/garden-porch.jpg','images/garden-living.jpg','images/garden-living-2.jpg','images/garden-dining.jpg','images/garden-bedroom.jpg','images/garden-bedroom-2.jpg','images/garden-twin.jpg','images/garden-bath.jpg','images/garden-driveway.jpg'], amenities:AMEN }
     ];
@@ -429,7 +429,7 @@
             <p>${esc(s.summary)}</p>
             <ul class="checks">${(s.amenities||[]).map(a=>`<li>${esc(a)}</li>`).join('')}</ul>
             <div class="unit-foot"><span class="meta"><b>${esc(s.guests)}</b> · ${esc(price(s))}</span>
-              <span class="unit-actions"><button class="link-btn" data-open="${i}">View photos</button><a class="btn rust" href="#contact" data-interest="${esc(s.name)} (${esc(s.type.replace(/ unit$/i,''))})">BOOK ${esc(s.name.toUpperCase())}</a></span></div>
+              <span class="unit-actions"><button class="link-btn" data-open="${i}">View photos</button><a class="btn rust" href="#contact" data-interest="${esc(s.name)}">BOOK ${esc(s.name.toUpperCase())}</a></span></div>
           </div></article>`;
       }).join('');
     }
@@ -462,7 +462,7 @@
       if (!cur.photos.length) cur.photos = [cur.cover];
       $('#dlgTitle').textContent = cur.name + ' · ' + cur.type; $('#dlgPlace').textContent = cur.location;
       $('#dlgSummary').textContent = cur.summary || ''; $('#dlgDetails').textContent = cur.details || '';
-      $('#dlgFacts').innerHTML = `<div><b>Bedrooms:</b> ${esc(cur.bedrooms)} (AC)</div><div><b>Sleeps:</b> ${esc(cur.guests)}</div><div><b>Rates:</b> ${esc(price(cur))}</div><a class="btn rust" href="#contact" data-interest="${esc(cur.name)} (${esc(cur.type.replace(/ unit$/i,''))})" style="margin-top:8px">BOOK ${esc(cur.name.toUpperCase())}</a>`;
+      $('#dlgFacts').innerHTML = `<div><b>Bedrooms:</b> ${esc(cur.bedrooms)} (AC)</div><div><b>Sleeps:</b> ${esc(cur.guests)}</div><div><b>Rates:</b> ${esc(price(cur))}</div><a class="btn rust" href="#contact" data-interest="${esc(cur.name)}" style="margin-top:8px">BOOK ${esc(cur.name.toUpperCase())}</a>`;
       $('#dlgThumbs').innerHTML = cur.photos.map((p,j)=>`<button data-j="${j}" aria-label="Photo ${j+1}"><img src="${esc(small(p))}" alt="" loading="lazy"></button>`).join('');
       dlg.showModal(); show(0);
     }
