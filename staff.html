@@ -140,6 +140,7 @@
     .cuthead b{color:var(--ink)}
     .cuthead input{width:52px;padding:6px;border:1px solid #dcd7cb;border-radius:4px;font-size:15px}
     .cuthead .btn{min-height:34px;padding:0 10px;font-size:12px}
+    .cutview{width:100%;height:auto;display:block;border-radius:4px;touch-action:none;cursor:crosshair;background:#222}
     .cuts{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
     .cuts figure{margin:0;position:relative;border-radius:4px;overflow:hidden;background:#f3f0e8;aspect-ratio:16/10;cursor:pointer;border:2px solid var(--green)}
     .cuts figure img{width:100%;height:100%;object-fit:contain;display:block}
@@ -788,7 +789,7 @@
     function modeChanged() {
       $('#upGroupWrap').hidden = many();
       $('#upHint').textContent = many()
-        ? 'Lay the cards flat on a DARK surface with small gaps between them, in good light. 6–12 cards per photo works best. You can check the cut-out cards before uploading.'
+        ? 'Lay the cards flat on a DARK surface with small gaps between them, in good light. 6–12 cards per photo works best. You will see every card found and can add any that were missed.'
         : (meta && meta.reader && meta.reader !== 'Google OCR'
             ? 'One card or many per photo (up to about 24). Lay the cards flat in good light, without glare. You can add several photos.'
             : 'One card per photo: fill the frame with the card, flat, in good light, without glare. You can add many photos at once.');
@@ -802,104 +803,145 @@
     }));
 
     // --- "Several cards": find the cards in each photo and cut them out (all on this device) ---
-// Finds visiting cards (light rectangles) in a photo of several cards on a darker surface.
-// Returns boxes in original-image pixels, in reading order. Runs in the browser, no libraries.
-async function findCards(bitmap) {
-  const W0 = bitmap.width, H0 = bitmap.height;
-  const k = Math.min(1, 900 / Math.max(W0, H0));
-  const W = Math.round(W0 * k), H = Math.round(H0 * k);
-  const c = document.createElement('canvas'); c.width = W; c.height = H;
-  const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(bitmap, 0, 0, W, H);
-  const px = g.getImageData(0, 0, W, H).data;
-  // "Card-ness": bright and not very colourful (paper), against a darker or coloured surface.
-  const score = new Float32Array(W * H);
-  for (let i = 0, p = 0; i < W * H; i++, p += 4) {
-    const r = px[p], gg = px[p + 1], b = px[p + 2];
-    const mx = Math.max(r, gg, b), mn = Math.min(r, gg, b);
-    score[i] = mx - 0.6 * (mx - mn);            // brightness minus part of the saturation
-  }
-  // Otsu threshold on the score
-  const hist = new Array(256).fill(0);
-  for (let i = 0; i < score.length; i++) hist[Math.max(0, Math.min(255, score[i] | 0))]++;
-  let sum = 0; for (let t = 0; t < 256; t++) sum += t * hist[t];
-  let sumB = 0, wB = 0, best = 0, thr = 128;
-  for (let t = 0; t < 256; t++) {
-    wB += hist[t]; if (!wB) continue; const wF = score.length - wB; if (!wF) break;
-    sumB += t * hist[t]; const mB = sumB / wB, mF = (sum - sumB) / wF;
-    const v = wB * wF * (mB - mF) * (mB - mF); if (v > best) { best = v; thr = t; }
-  }
-  let mask = new Uint8Array(W * H);
-  for (let i = 0; i < mask.length; i++) mask[i] = score[i] > thr ? 1 : 0;
-  // Erode a little so cards that almost touch become separate, then label connected areas.
-  const erode = (m, r) => {
-    const out = new Uint8Array(m.length);
-    for (let y = r; y < H - r; y++) for (let x = r; x < W - r; x++) {
-      let ok = 1;
-      for (let d = -r; d <= r && ok; d++) if (!m[(y + d) * W + x] || !m[y * W + x + d]) ok = 0;
-      out[y * W + x] = ok;
-    }
-    return out;
-  };
-  // Try several separation strengths and keep the one that finds the most card-shaped areas.
-  const total = W * H;
-  const base = Math.max(2, Math.round(Math.min(W, H) / 220));
-  const label = new Int32Array(W * H), stack = new Int32Array(W * H);
-  const cardsAt = r => {
-    const m = erode(mask, r); label.fill(0);
-    const boxes = []; let n = 0;
-    for (let i = 0; i < m.length; i++) {
-      if (!m[i] || label[i]) continue;
-      n++; let sp = 0; stack[sp++] = i; label[i] = n;
-      let minx = W, miny = H, maxx = 0, maxy = 0, area = 0;
-      while (sp) {
-        const j = stack[--sp], x = j % W, y = (j / W) | 0; area++;
-        if (x < minx) minx = x; if (x > maxx) maxx = x; if (y < miny) miny = y; if (y > maxy) maxy = y;
-        if (x > 0 && m[j - 1] && !label[j - 1]) { label[j - 1] = n; stack[sp++] = j - 1; }
-        if (x < W - 1 && m[j + 1] && !label[j + 1]) { label[j + 1] = n; stack[sp++] = j + 1; }
-        if (y > 0 && m[j - W] && !label[j - W]) { label[j - W] = n; stack[sp++] = j - W; }
-        if (y < H - 1 && m[j + W] && !label[j + W]) { label[j + W] = n; stack[sp++] = j + W; }
+    // Finds visiting cards in a photo of several cards. Two ways of seeing a card are combined:
+    //  1. light, paper-coloured areas (most cards), and
+    //  2. areas that differ in colour from the surface around the edges of the photo (dark or colourful cards).
+    // Returns boxes in original-photo pixels, in reading order. Runs on the device, no libraries.
+    async function findCards(bitmap) {
+      const W0 = bitmap.width, H0 = bitmap.height;
+      const k = Math.min(1, 900 / Math.max(W0, H0));
+      const W = Math.round(W0 * k), H = Math.round(H0 * k), N = W * H;
+      const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+      const g = cv.getContext('2d', { willReadFrequently: true }); g.drawImage(bitmap, 0, 0, W, H);
+      const px = g.getImageData(0, 0, W, H).data;
+
+      const otsu = vals => {
+        const hist = new Array(256).fill(0);
+        for (let i = 0; i < vals.length; i++) hist[Math.max(0, Math.min(255, vals[i] | 0))]++;
+        let sum = 0; for (let t = 0; t < 256; t++) sum += t * hist[t];
+        let sumB = 0, wB = 0, best = 0, thr = 128;
+        for (let t = 0; t < 256; t++) {
+          wB += hist[t]; if (!wB) continue; const wF = vals.length - wB; if (!wF) break;
+          sumB += t * hist[t]; const mB = sumB / wB, mF = (sum - sumB) / wF, v = wB * wF * (mB - mF) * (mB - mF);
+          if (v > best) { best = v; thr = t; }
+        }
+        return thr;
+      };
+      // 1. "paper-ness": bright and not very colourful
+      const paper = new Float32Array(N);
+      for (let i = 0, p = 0; i < N; i++, p += 4) {
+        const mx = Math.max(px[p], px[p + 1], px[p + 2]), mn = Math.min(px[p], px[p + 1], px[p + 2]);
+        paper[i] = mx - 0.6 * (mx - mn);
       }
-      boxes.push({ minx: minx - r, miny: miny - r, maxx: maxx + r, maxy: maxy + r, area });
+      // 2. difference from the surface colour (median of a ring along the photo's edges)
+      const ring = [[], [], []], m = Math.max(2, Math.round(Math.min(W, H) * 0.03));
+      for (let y = 0; y < H; y += 2) for (let x = 0; x < W; x += 2) {
+        if (x >= m && x < W - m && y >= m && y < H - m) continue;
+        const p = (y * W + x) * 4; ring[0].push(px[p]); ring[1].push(px[p + 1]); ring[2].push(px[p + 2]);
+      }
+      const med = a => { a.sort((u, v) => u - v); return a[a.length >> 1] || 0; };
+      const bg = ring.map(med);
+      const diff = new Float32Array(N);
+      for (let i = 0, p = 0; i < N; i++, p += 4) {
+        const dr = px[p] - bg[0], dg = px[p + 1] - bg[1], db = px[p + 2] - bg[2];
+        diff[i] = Math.min(255, Math.sqrt(dr * dr + dg * dg + db * db));
+      }
+      // Smooth the colour difference (table textures like mesh or wood grain), then use a threshold
+      // set by how much the table itself varies, so dark cards on a dark table still stand out.
+      const blur = (v, r) => {
+        const tmp = new Float32Array(N), out = new Float32Array(N);
+        for (let y = 0; y < H; y++) { let acc = 0; for (let x = -r; x < W + r; x++) {
+          acc += x + r < W ? v[y * W + Math.min(W - 1, x + r)] : 0; acc -= x - r - 1 >= 0 ? v[y * W + x - r - 1] : 0;
+          if (x >= 0 && x < W) tmp[y * W + x] = acc / (2 * r + 1); } }
+        for (let x = 0; x < W; x++) { let acc = 0; for (let y = -r; y < H + r; y++) {
+          acc += y + r < H ? tmp[Math.min(H - 1, y + r) * W + x] : 0; acc -= y - r - 1 >= 0 ? tmp[(y - r - 1) * W + x] : 0;
+          if (y >= 0 && y < H) out[y * W + x] = acc / (2 * r + 1); } }
+        return out;
+      };
+      const sdiff = blur(diff, Math.max(1, Math.round(Math.min(W, H) / 300)));
+      const ringVals = [];
+      for (let y = 0; y < H; y += 2) for (let x = 0; x < W; x += 2) {
+        if (x >= m && x < W - m && y >= m && y < H - m) continue; ringVals.push(sdiff[y * W + x]);
+      }
+      ringVals.sort((a, b) => a - b);
+      const noise = ringVals[Math.floor(ringVals.length * 0.9)] || 0;      // how different the table is from itself
+      const diffThr = Math.max(18, Math.min(otsu(sdiff), noise * 1.8 + 8));
+      const paperThr = otsu(paper);
+      const masks = [
+        (() => { const mk = new Uint8Array(N); for (let i = 0; i < N; i++) mk[i] = paper[i] > paperThr ? 1 : 0; return mk; })(),
+        (() => { const mk = new Uint8Array(N); for (let i = 0; i < N; i++) mk[i] = sdiff[i] > diffThr ? 1 : 0; return mk; })(),
+      ];
+
+      const erode = (mk, r) => {
+        const out = new Uint8Array(N);
+        for (let y = r; y < H - r; y++) for (let x = r; x < W - r; x++) {
+          let ok = 1;
+          for (let d = -r; d <= r && ok; d++) if (!mk[(y + d) * W + x] || !mk[y * W + x + d]) ok = 0;
+          out[y * W + x] = ok;
+        }
+        return out;
+      };
+      const label = new Int32Array(N), stack = new Int32Array(N);
+      const cardsAt = (mask, r) => {
+        const mk = erode(mask, r); label.fill(0);
+        const boxes = []; let n = 0;
+        for (let i = 0; i < N; i++) {
+          if (!mk[i] || label[i]) continue;
+          n++; let sp = 0; stack[sp++] = i; label[i] = n;
+          let minx = W, miny = H, maxx = 0, maxy = 0, area = 0;
+          while (sp) {
+            const j = stack[--sp], x = j % W, y = (j / W) | 0; area++;
+            if (x < minx) minx = x; if (x > maxx) maxx = x; if (y < miny) miny = y; if (y > maxy) maxy = y;
+            if (x > 0 && mk[j - 1] && !label[j - 1]) { label[j - 1] = n; stack[sp++] = j - 1; }
+            if (x < W - 1 && mk[j + 1] && !label[j + 1]) { label[j + 1] = n; stack[sp++] = j + 1; }
+            if (y > 0 && mk[j - W] && !label[j - W]) { label[j - W] = n; stack[sp++] = j - W; }
+            if (y < H - 1 && mk[j + W] && !label[j + W]) { label[j + W] = n; stack[sp++] = j + W; }
+          }
+          boxes.push({ minx: minx - r, miny: miny - r, maxx: maxx + r, maxy: maxy + r, area });
+        }
+        return boxes.filter(b => {
+          const w = b.maxx - b.minx + 1, h = b.maxy - b.miny + 1, ar = Math.max(w, h) / Math.min(w, h);
+          return b.area > N * 0.004 && b.area < N * 0.6 && b.area / (w * h) > 0.45 && ar > 1.15 && ar < 2.6;
+        });
+      };
+      // Several separation strengths on both views; a box holding two or more smaller card boxes is
+      // touching cards (use the smaller ones); the same card seen several times -> keep the gentlest.
+      const base = Math.max(2, Math.round(Math.min(W, H) / 220));
+      const cand = [];
+      masks.forEach((mask, which) => [base, base * 2, base * 3, base * 4, base * 6].forEach((r, level) =>
+        cardsAt(mask, r).forEach(b => cand.push(Object.assign(b, { level: level * 2 + which })))));
+      const areaOf = b => (b.maxx - b.minx) * (b.maxy - b.miny);
+      const inter = (a, b) => Math.max(0, Math.min(a.maxx, b.maxx) - Math.max(a.minx, b.minx)) * Math.max(0, Math.min(a.maxy, b.maxy) - Math.max(a.miny, b.miny));
+      const merged = cand.filter(a => cand.filter(b => b !== a && areaOf(b) < areaOf(a) * 0.75 && inter(a, b) > areaOf(b) * 0.8).length >= 2);
+      // A smaller box lying inside a bigger card-shaped box is part of that card (e.g. the white half
+      // of a blue-and-white card): keep the bigger one. Otherwise the gentlest separation wins.
+      let cards = [];
+      const ok = cand.filter(a => merged.indexOf(a) < 0);
+      ok.sort((a, b) => areaOf(b) - areaOf(a) || a.level - b.level).forEach(a => {
+        if (!cards.some(b => inter(a, b) > 0.5 * Math.min(areaOf(a), areaOf(b)))) cards.push(a);
+      });
+      // Reading order: rows from the top, left to right within a row.
+      cards.sort((a, b) => a.miny - b.miny);
+      const rows = [];
+      cards.forEach(b => {
+        const cy = (b.miny + b.maxy) / 2, row = rows.find(rw => Math.abs(rw.cy - cy) < (b.maxy - b.miny) * 0.5);
+        if (row) row.items.push(b); else rows.push({ cy, items: [b] });
+      });
+      cards = [].concat(...rows.map(rw => rw.items.sort((a, b) => a.minx - b.minx)));
+      return cards.map(b => {
+        const mg = 0.02 * Math.max(b.maxx - b.minx, b.maxy - b.miny);
+        const x0 = Math.max(0, (b.minx - mg) / k), y0 = Math.max(0, (b.miny - mg) / k);
+        const x1 = Math.min(W0, (b.maxx + mg) / k), y1 = Math.min(H0, (b.maxy + mg) / k);
+        return { x: Math.round(x0), y: Math.round(y0), w: Math.round(x1 - x0), h: Math.round(y1 - y0) };
+      });
     }
-    return boxes.filter(b => {
-      const w = b.maxx - b.minx + 1, h = b.maxy - b.miny + 1, ar = Math.max(w, h) / Math.min(w, h);
-      return b.area > total * 0.004 && b.area < total * 0.6 && b.area / (w * h) > 0.45 && ar > 1.15 && ar < 2.6;
-    });
-  };
-  // Combine all strengths: a box that contains two or more smaller card boxes is two touching
-  // cards -> use the smaller ones; the same card found at several strengths -> keep the gentlest.
-  const cand = [];
-  [base, base * 2, base * 3, base * 4, base * 6].forEach((r, level) => cardsAt(r).forEach(b => cand.push(Object.assign(b, { level }))));
-  const areaOf = b => (b.maxx - b.minx) * (b.maxy - b.miny);
-  const inter = (a, b) => Math.max(0, Math.min(a.maxx, b.maxx) - Math.max(a.minx, b.minx)) * Math.max(0, Math.min(a.maxy, b.maxy) - Math.max(a.miny, b.miny));
-  const merged = cand.filter(a => cand.filter(b => b !== a && areaOf(b) < areaOf(a) * 0.75 && inter(a, b) > areaOf(b) * 0.8).length >= 2);
-  let cards = [];
-  cand.filter(a => merged.indexOf(a) < 0).sort((a, b) => a.level - b.level).forEach(a => {
-    if (!cards.some(b => inter(a, b) > 0.5 * Math.min(areaOf(a), areaOf(b)))) cards.push(a);
-  });
-  // Reading order: rows from the top, left to right within a row.
-  cards.sort((a, b) => a.miny - b.miny);
-  const rows = [];
-  cards.forEach(b => {
-    const cy = (b.miny + b.maxy) / 2, row = rows.find(rw => Math.abs(rw.cy - cy) < (b.maxy - b.miny) * 0.5);
-    if (row) row.items.push(b); else rows.push({ cy, items: [b] });
-  });
-  cards = [].concat(...rows.map(rw => rw.items.sort((a, b) => a.minx - b.minx)));
-  // Back to original pixels, with a small margin.
-  return cards.map(b => {
-    const m = 0.02 * Math.max(b.maxx - b.minx, b.maxy - b.miny);
-    const x0 = Math.max(0, (b.minx - m) / k), y0 = Math.max(0, (b.miny - m) / k);
-    const x1 = Math.min(W0, (b.maxx + m) / k), y1 = Math.min(H0, (b.maxy + m) / k);
-    return { x: Math.round(x0), y: Math.round(y0), w: Math.round(x1 - x0), h: Math.round(y1 - y0) };
-  });
-}
 
     async function cutOut(bmp, b) {
       const k = Math.min(1, 2000 / Math.max(b.w, b.h));
       const c = document.createElement('canvas'); c.width = Math.round(b.w * k); c.height = Math.round(b.h * k);
       c.getContext('2d').drawImage(bmp, b.x, b.y, b.w, b.h, 0, 0, c.width, c.height);
       const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.92));
-      return { blob, url: URL.createObjectURL(blob), on: true };
+      return { blob, url: URL.createObjectURL(blob), on: true, box: b };
     }
     async function cutPhoto(p, grid) {
       p.busy = true; drawPicked();
@@ -943,12 +985,72 @@ async function findCards(bitmap) {
               <input type="number" min="1" max="8" value="${p.grid ? p.grid.cols : ''}" placeholder="cols" data-cols="${i}" aria-label="Columns">
               <button type="button" class="btn ghost" data-grid="${i}">SPLIT</button>${p.grid ? ` <button type="button" class="btn ghost" data-auto="${i}">AUTO</button>` : ''}</span>
             <button type="button" class="btn ghost" data-rm="${i}">REMOVE PHOTO</button></div>
+          ${p.bmp ? `<canvas class="cutview" data-view="${i}" aria-label="Photo ${i + 1} with the cards found"></canvas>
+          <p class="meta">Missed a card? <b>Drag a box around it</b> on the photo. Tap a box (or a card below) to leave it out.</p>` : ''}
           <div class="cuts">${(p.cuts || []).map((c, k) => `<figure class="${c.on ? '' : 'off'}" data-cut="${i}:${k}"><img src="${c.url}" alt="Card ${k + 1}"><span>${k + 1}</span></figure>`).join('')}</div>
         </div>`).join('');
+      picked.forEach((p, i) => paintView(i));
       const n = picked.reduce((t, p) => t + (p.cuts || []).filter(c => c.on).length, 0);
       $('#upCount').textContent = picked.length ? n + ' card(s) selected from ' + picked.length + ' photo(s)' : 'No photos yet';
       go.disabled = !n || picked.some(p => p.busy);
     }
+    // ---- the photo with boxes: drag to add a missed card, tap a box to leave it out ----
+    let drag = null;
+    function paintView(i, temp) {
+      const p = picked[i], cv = $(`canvas[data-view="${i}"]`);
+      if (!p || !p.bmp || !cv) return;
+      const W = Math.min(900, p.bmp.width), s = W / p.bmp.width;
+      if (cv.width !== W) { cv.width = W; cv.height = Math.round(p.bmp.height * s); }
+      const g = cv.getContext('2d');
+      g.drawImage(p.bmp, 0, 0, cv.width, cv.height);
+      const lw = Math.max(2, W / 250);
+      g.font = 'bold ' + Math.round(W / 28) + 'px sans-serif';
+      (p.cuts || []).forEach((c, k) => {
+        if (!c.box) return;
+        const x = c.box.x * s, y = c.box.y * s, w = c.box.w * s, h = c.box.h * s;
+        g.lineWidth = lw; g.setLineDash(c.on ? [] : [lw * 3, lw * 2]);
+        g.strokeStyle = c.on ? '#22c55e' : '#9ca3af'; g.strokeRect(x, y, w, h);
+        const t = String(k + 1), tw = g.measureText(t).width + lw * 4, th = W / 22;
+        g.fillStyle = c.on ? '#15803d' : '#6b7280'; g.fillRect(x, y, tw, th);
+        g.fillStyle = '#fff'; g.fillText(t, x + lw * 2, y + th * 0.8);
+      });
+      g.setLineDash([]);
+      if (temp) { g.lineWidth = lw; g.strokeStyle = '#c85b22'; g.strokeRect(temp.x * s, temp.y * s, temp.w * s, temp.h * s); }
+    }
+    const photoPoint = (cv, e) => {
+      const r = cv.getBoundingClientRect(), p = picked[+cv.dataset.view];
+      return { x: (e.clientX - r.left) / r.width * p.bmp.width, y: (e.clientY - r.top) / r.height * p.bmp.height };
+    };
+    $('#upThumbs').addEventListener('pointerdown', e => {
+      const cv = e.target.closest('canvas.cutview'); if (!cv) return;
+      e.preventDefault(); cv.setPointerCapture(e.pointerId);
+      const pt = photoPoint(cv, e); drag = { cv, i: +cv.dataset.view, x0: pt.x, y0: pt.y, box: null };
+    });
+    $('#upThumbs').addEventListener('pointermove', e => {
+      if (!drag) return;
+      const pt = photoPoint(drag.cv, e);
+      drag.box = { x: Math.min(drag.x0, pt.x), y: Math.min(drag.y0, pt.y), w: Math.abs(pt.x - drag.x0), h: Math.abs(pt.y - drag.y0) };
+      paintView(drag.i, drag.box);
+    });
+    $('#upThumbs').addEventListener('pointerup', async e => {
+      if (!drag) return;
+      const d = drag, p = picked[d.i]; drag = null;
+      const minSide = Math.min(p.bmp.width, p.bmp.height) * 0.04;
+      if (d.box && d.box.w > minSide && d.box.h > minSide) {
+        // a new card drawn by hand
+        const b = { x: Math.max(0, Math.round(d.box.x)), y: Math.max(0, Math.round(d.box.y)),
+                    w: Math.round(Math.min(d.box.w, p.bmp.width - d.box.x)), h: Math.round(Math.min(d.box.h, p.bmp.height - d.box.y)) };
+        paintView(d.i, b);                                  // show the new box straight away
+        p.cuts = p.cuts || []; p.cuts.push(await cutOut(p.bmp, b)); p.error = '';
+        drawPicked(); return;
+      }
+      // a tap: leave the tapped card out (or back in)
+      const hit = (p.cuts || []).map((c, k) => ({ c, k })).filter(({ c }) => c.box && d.x0 >= c.box.x && d.x0 <= c.box.x + c.box.w && d.y0 >= c.box.y && d.y0 <= c.box.y + c.box.h)
+        .sort((a, b) => a.c.box.w * a.c.box.h - b.c.box.w * b.c.box.h)[0];
+      if (hit) { hit.c.on = !hit.c.on; drawPicked(); } else paintView(d.i);
+    });
+    $('#upThumbs').addEventListener('pointercancel', () => { if (drag) { paintView(drag.i); drag = null; } });
+
     $('#upThumbs').addEventListener('click', e => {
       const rm = e.target.closest('[data-rm]');
       if (rm) { const p = picked[+rm.dataset.rm]; URL.revokeObjectURL(p.url); (p.cuts || []).forEach(c => URL.revokeObjectURL(c.url)); picked.splice(+rm.dataset.rm, 1); drawPicked(); return; }
