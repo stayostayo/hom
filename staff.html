@@ -569,8 +569,8 @@
         n.innerHTML = (prefix || '') + (total.processed
           ? `<b>${total.processed} photo(s) scanned, ${total.cards} card(s) found:</b> ${total.buyers} buyer(s), ${total.sellers} seller(s)` +
             (total.toCheck ? ` · <b>${total.toCheck} marked “To check”</b> – please compare them with the card photo` : '') +
-            (total.failed ? ` · ${total.failed} photo(s) could not be read and will be retried on the next scan` : '') + '.'
-          : (total.failed ? `${total.failed} photo(s) could not be read; they will be retried on the next scan.`
+            (total.failed ? ` · ${total.failed} photo(s) could not be read (see below)` : '') + '.'
+          : (total.failed ? `${total.failed} photo(s) could not be read (see below).`
                           : skipped.length ? 'No new photos to read.' : 'No new visiting cards found. Use “Add card photos”, then scan again.'));
         if (errors.length) n.innerHTML += '<ul class="scan-errors">' + errors.map(e => `<li><b>${esc(e.file)}:</b> ${esc(e.error)}</li>`).join('') + '</ul>';
         if (skipped.length) {
