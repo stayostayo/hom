@@ -88,9 +88,12 @@
     .meta{font-size:12px;color:var(--muted)}
     .switch{display:flex;align-items:center;gap:10px;font-size:14px}
     .switch input{width:20px;height:20px;accent-color:var(--green)}
-    .vbox{border-top:1px solid var(--line);padding-top:12px;font-size:12px;color:var(--muted);display:grid;gap:3px}
-    .vline{max-width:1240px;margin:auto;padding:0 16px 4px;font-size:12px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap}
-    .vbox b,.vline b{color:var(--ink);font-weight:600}
+    body{display:flex;flex-direction:column;min-height:100vh}
+    body>#loginView,body>#pwView{flex:1 0 auto;min-height:0}
+    body>#appView{flex:1 0 auto}
+    .sfoot{border-top:1px solid var(--line);background:#fff;padding:12px 16px;text-align:center;font-size:12px;color:var(--muted)}
+    .sfoot .js-ver{max-width:1240px;margin:auto;display:flex;gap:6px 14px;justify-content:center;flex-wrap:wrap}
+    .sfoot b{color:var(--green);font-weight:700}
     .vwarn{color:var(--warn)!important}
     .pw-wrap{position:relative;display:block}
     .pw-wrap input{padding-right:50px!important}
@@ -141,7 +144,6 @@
       <button class="btn" type="submit">SIGN IN</button>
       <p class="msg" id="loginMsg" role="status"></p>
       <p class="back"><a href="./">← Back to the HOM website</a></p>
-      <div class="vbox js-ver"></div>
     </form>
   </section>
 
@@ -170,7 +172,6 @@
           <button class="btn ghost" id="pwBtn" type="button">Password</button>
           <button class="btn ghost js-signout" type="button">Sign out</button></div>
       </div>
-      <div class="vline js-ver"></div>
       <nav class="tabs" aria-label="Sections">
         <button data-tab="buyers" class="on">Buyers <small id="nBuyers">–</small></button>
         <button data-tab="sellers">Sellers <small id="nSellers">–</small></button>
@@ -294,6 +295,8 @@
 
   <div class="toast" id="toast" role="status" hidden></div>
 
+  <footer class="sfoot"><div class="js-ver"></div></footer>
+
   <script src="config.js"></script>
   <script src="version.js"></script>
   <script>
@@ -315,7 +318,7 @@
     let SERVER_V = null, serverMsg = 'checking…';
     function renderVersions() {
       const v = SITE_V.version || 'dev';
-      let line = `Version <b>${esc(v)}</b>${SITE_V.date ? ' · ' + esc(SITE_V.date) : ''}`, warn = '';
+      let line = `<b>HOM Staff Area</b> · STAYO Partners · Version <b>${esc(v)}</b>${SITE_V.date ? ' · ' + esc(SITE_V.date) : ''}`, warn = '';
       if (!SERVER_V) warn = serverMsg === 'checking…' ? '' : 'server ' + serverMsg;
       else if (!SERVER_V.staff) warn = 'server is older than the staff area';
       else if (SERVER_V.version !== v) warn = 'server still updating (' + SERVER_V.version + ')';
