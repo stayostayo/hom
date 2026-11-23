@@ -46,6 +46,13 @@
     .bar .title{font-weight:700;color:var(--green);font-size:14px;border-left:1px solid var(--line);padding-left:14px}
     .bar .me{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
     .bar .me b{color:var(--ink)}
+    .icon-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;color:var(--green);border-radius:999px;padding:7px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+    .icon-btn:hover,.icon-btn.on{background:var(--cream)}
+    .panel{background:#fff;border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:18px}
+    .panel h3{font-size:18px;margin:0 0 10px;color:var(--green)}
+    .panel .intro p{margin-top:2px}
+    .acct{display:grid;grid-template-columns:110px 1fr;gap:6px 12px;margin:0 0 14px;font-size:14px}.acct dt{color:var(--muted)}.acct dd{margin:0;font-weight:600}
+    .back-link{margin:0 0 10px;font-size:14px}.back-link a{color:var(--green);font-weight:700;text-decoration:none}
     .role{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--sand);color:var(--green)}
     .tabs{max-width:1240px;margin:auto;padding:0 16px;display:flex;gap:4px;overflow-x:auto}
     .tabs button{border:0;background:none;padding:12px 14px;font-weight:700;font-size:14px;color:var(--muted);border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
@@ -150,7 +157,7 @@
     .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--green-deep);color:#fff;padding:12px 18px;border-radius:6px;font-size:14px;z-index:50;box-shadow:0 8px 24px #0004;max-width:calc(100% - 32px)}
 
     @media(max-width:760px){
-      .bar .title{display:none}.bar .me span.nm{display:none}
+      .bar .title{display:none}.bar .me span.nm{display:none}.icon-btn span{display:none}.icon-btn{padding:8px}
       .grid2{grid-template-columns:1fr}
       table.list thead{display:none}
       table.list,table.list tbody,table.list tr,table.list td{display:block;width:100%}
@@ -200,13 +207,12 @@
         <a href="./" title="HOM website"><img src="images/logo.png" alt="HOM" width="68" height="40"></a>
         <span class="title">STAYO Partners</span>
         <div class="me"><span class="nm">Signed in as <b id="meName"></b></span><span class="role" id="meRole"></span>
-          <button class="btn ghost" id="pwBtn" type="button">Password</button>
+          <button class="icon-btn" id="setBtn" type="button" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></button>
           <button class="btn ghost js-signout" type="button">Sign out</button></div>
       </div>
       <nav class="tabs" aria-label="Sections">
         <button data-tab="buyers" class="on">Buyers <small id="nBuyers">–</small></button>
         <button data-tab="sellers">Sellers <small id="nSellers">–</small></button>
-        <button data-tab="users" id="usersTab" hidden>Users</button>
       </nav>
     </header>
 
@@ -233,14 +239,27 @@
         <div id="listWrap"></div>
       </section>
 
-      <!-- Users (Admin only) -->
-      <section id="usersView" hidden>
-        <div class="intro">
-          <div><h2>Users</h2><p>Who can sign in to the staff area. New users must set their own password at first sign-in.</p></div>
-          <button class="btn rust" id="addUserBtn" type="button">+ ADD USER</button>
+      <!-- Settings -->
+      <section id="settingsView" hidden>
+        <p class="back-link"><a href="#" id="setBack">&larr; Back to contacts</a></p>
+        <div class="intro"><div><h2>Settings</h2><p>Your account, staff users and visiting-card scanning.</p></div></div>
+
+        <div class="panel">
+          <h3>My account</h3>
+          <dl class="acct"><dt>Name</dt><dd id="acName"></dd><dt>Username</dt><dd id="acUser"></dd><dt>Role</dt><dd id="acRole"></dd></dl>
+          <button class="btn ghost" id="pwBtn" type="button">CHANGE PASSWORD</button>
         </div>
-        <div id="usersWrap"></div>
-        <div class="notice" style="margin-top:18px">
+
+        <div class="panel js-admin">
+          <div class="intro" style="margin-bottom:10px">
+            <div><h3>Users</h3><p>Who can sign in to the staff area. New users set their own password at first sign-in.</p></div>
+            <button class="btn rust" id="addUserBtn" type="button">+ ADD USER</button>
+          </div>
+          <div id="usersWrap"></div>
+        </div>
+
+        <div class="panel js-admin">
+          <h3>Visiting cards</h3>
           <label class="switch"><input type="checkbox" id="autoScan"> Scan new visiting cards automatically every hour</label>
           <div class="meta" style="margin-top:6px">Card reader: <span id="reader">–</span>. Photos go in Google Drive › ToolBox › visiting cards. Put them in a <b>Buyers</b> or <b>Sellers</b> subfolder to skip the guessing.</div>
         </div>
@@ -366,7 +385,7 @@
     const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
     const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const KEY = 'hom_staff_session';
-    let session = null, tab = 'buyers', data = { buyers: null, sellers: null }, meta = null, editing = null, users = [];
+    let lastList = 'buyers', session = null, tab = 'buyers', data = { buyers: null, sellers: null }, meta = null, editing = null, users = [];
     const LABEL = {
       buyers: ['Buyers', 'Hotels & resorts — we bring business to them.'],
       sellers: ['Sellers', 'Travel agents & tour operators — they bring Trivandrum business to us.'],
@@ -449,7 +468,7 @@
       }
       if (v === 'app') {
         $('#meName').textContent = session.user.name; $('#meRole').textContent = session.user.role;
-        $('#usersTab').hidden = session.user.role !== 'Admin'; $('#delBtn').hidden = session.user.role !== 'Admin';
+        $('#delBtn').hidden = session.user.role !== 'Admin';
         openTab(tab);
       }
     }
@@ -475,6 +494,14 @@
       busy(btn, false);
     });
     $('#pwBtn').onclick = () => show('pw');
+    $('#setBtn').onclick = () => openTab('settings');
+    $('#setBack').onclick = e => { e.preventDefault(); openTab(lastList); };
+    function openSettings() {
+      const u = session.user, admin = u.role === 'Admin';
+      $('#acName').textContent = u.name || '–'; $('#acUser').textContent = u.username || '–'; $('#acRole').textContent = u.role;
+      $$('#settingsView .js-admin').forEach(el => el.hidden = !admin);
+      if (admin) loadUsers();
+    }
     $('#pwCancel').onclick = e => { e.preventDefault(); show('app'); };
     $$('.js-signout').forEach(b => b.addEventListener('click', async e => {
       e.preventDefault(); try { await api('staff:logout'); } catch (err) {}
@@ -485,8 +512,10 @@
     $$('.tabs button').forEach(b => b.onclick = () => openTab(b.dataset.tab));
     function openTab(t) {
       tab = t; $$('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
-      $('#contactsView').hidden = t === 'users'; $('#usersView').hidden = t !== 'users';
-      if (t === 'users') return loadUsers();
+      $('#contactsView').hidden = t === 'settings'; $('#settingsView').hidden = t !== 'settings';
+      $('#setBtn').classList.toggle('on', t === 'settings');
+      if (t === 'settings') return openSettings();
+      lastList = t;
       $('#listTitle').textContent = LABEL[t][0]; $('#listSub').textContent = LABEL[t][1];
       fillCategories(); fillPlaces(); render(); if (!data[t]) load(t);
       if (!data[t === 'buyers' ? 'sellers' : 'buyers']) load(t === 'buyers' ? 'sellers' : 'buyers', true);
