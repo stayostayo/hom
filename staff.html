@@ -220,6 +220,9 @@
           <input type="search" id="q" placeholder="Search name, company, phone, email, city…" aria-label="Search">
           <select id="fStatus" aria-label="Status"><option value="">All statuses</option><option>To check</option><option>Verified</option><option>Inactive</option></select>
           <select id="fCat" aria-label="Category"><option value="">All categories</option></select>
+          <select id="fState" aria-label="State"><option value="">All states</option></select>
+          <select id="fDistrict" aria-label="District"><option value="">All districts</option></select>
+          <select id="fCity" aria-label="City"><option value="">All cities</option></select>
           <button class="btn rust" id="addBtn" type="button">+ ADD</button>
           <button class="btn rust" id="uploadBtn" type="button">ADD CARD PHOTOS</button>
           <button class="btn" id="scanBtn" type="button">SCAN VISITING CARDS</button>
@@ -268,6 +271,8 @@
           <label class="field">Email 2<input name="email2" type="email" autocapitalize="none"></label>
           <label class="field">Website<input name="website" autocapitalize="none"></label>
           <label class="field">City<input name="city"></label>
+          <label class="field">District<input name="district" list="dlDistricts" autocomplete="off"></label>
+          <label class="field">State<input name="state" list="dlStates" autocomplete="off"></label>
           <label class="field">Status<select name="status"><option>To check</option><option>Verified</option><option>Inactive</option></select></label>
         </div>
         <label class="field">Address<textarea name="address" rows="2"></textarea></label>
@@ -347,6 +352,8 @@
     </form>
   </dialog>
 
+  <datalist id="dlDistricts"><option>Thiruvananthapuram</option><option>Kollam</option><option>Pathanamthitta</option><option>Alappuzha</option><option>Kottayam</option><option>Idukki</option><option>Ernakulam</option><option>Thrissur</option><option>Palakkad</option><option>Malappuram</option><option>Kozhikode</option><option>Wayanad</option><option>Kannur</option><option>Kasaragod</option></datalist>
+  <datalist id="dlStates"><option>Kerala</option><option>Tamil Nadu</option><option>Karnataka</option><option>Goa</option><option>Maharashtra</option><option>Puducherry</option><option>Andhra Pradesh</option><option>Telangana</option><option>Delhi</option><option>Lakshadweep</option></datalist>
   <div class="toast" id="toast" role="status" hidden></div>
 
   <footer class="sfoot"><div class="js-ver"></div></footer>
@@ -481,12 +488,12 @@
       $('#contactsView').hidden = t === 'users'; $('#usersView').hidden = t !== 'users';
       if (t === 'users') return loadUsers();
       $('#listTitle').textContent = LABEL[t][0]; $('#listSub').textContent = LABEL[t][1];
-      fillCategories(); render(); if (!data[t]) load(t);
+      fillCategories(); fillPlaces(); render(); if (!data[t]) load(t);
       if (!data[t === 'buyers' ? 'sellers' : 'buyers']) load(t === 'buyers' ? 'sellers' : 'buyers', true);
     }
     async function load(t, quiet) {
       if (!quiet) $('#listWrap').innerHTML = '<div class="empty">Loading…</div>';
-      try { const j = await api('staff:list', { tab: t }); data[t] = j.rows; meta = j.meta; counts(); if (t === tab) { fillCategories(); render(); } }
+      try { const j = await api('staff:list', { tab: t }); data[t] = j.rows; meta = j.meta; counts(); if (t === tab) { fillCategories(); fillPlaces(); render(); } }
       catch (err) { if (!quiet) $('#listWrap').innerHTML = `<div class="empty">${esc(err.message)}</div>`; }
     }
     function counts() { ['buyers', 'sellers'].forEach(t => { if (data[t]) $('#n' + t[0].toUpperCase() + t.slice(1)).textContent = data[t].length; }); }
@@ -500,8 +507,10 @@
     const pill = s => `<span class="pill ${s === 'Verified' ? 'ok' : s === 'Inactive' ? 'off' : 'check'}">${esc(s || 'To check')}</span>`;
     function filtered() {
       const q = $('#q').value.trim().toLowerCase(), st = $('#fStatus').value, cat = $('#fCat').value;
+      const fs = $('#fState').value, fd = $('#fDistrict').value, fc = $('#fCity').value;
       return (data[tab] || []).filter(r => (!st || (r.status || 'To check') === st) && (!cat || r.category === cat) &&
-        (!q || ['id', 'company', 'contact_name', 'designation', 'phone', 'phone2', 'phone3', 'email', 'email2', 'website', 'city', 'address', 'notes']
+        (!fs || r.state === fs) && (!fd || r.district === fd) && (!fc || r.city === fc) &&
+        (!q || ['id', 'company', 'contact_name', 'designation', 'phone', 'phone2', 'phone3', 'email', 'email2', 'website', 'city', 'district', 'state', 'address', 'notes']
           .some(k => String(r[k] || '').toLowerCase().indexOf(q) >= 0)));
     }
     function render() {
@@ -510,20 +519,35 @@
       $('#count').textContent = `${rows.length} of ${data[tab].length}` + (toCheck ? ` · ${toCheck} to check` : '');
       if (!data[tab].length) { $('#listWrap').innerHTML = `<div class="empty">No ${tab} yet. Add one, or scan the visiting cards.</div>`; return; }
       if (!rows.length) { $('#listWrap').innerHTML = '<div class="empty">Nothing matches your search.</div>'; return; }
-      $('#listWrap').innerHTML = `<table class="list"><thead><tr><th class="num">#</th><th>Company</th><th>Contact</th><th>Phone</th><th class="hide-sm">Email</th><th>City</th><th>Status</th></tr></thead><tbody>` +
+      $('#listWrap').innerHTML = `<table class="list"><thead><tr><th class="num">#</th><th>Company</th><th>Contact</th><th>Phone</th><th class="hide-sm">Email</th><th>Place</th><th>Status</th></tr></thead><tbody>` +
         rows.map((r, n) => `<tr data-id="${esc(r.id)}">
           <td class="num">${n + 1}</td>
           <td><b>${esc(r.company || '—')}</b><span class="sub">${esc([r.category, r.id].filter(Boolean).join(' · '))}</span></td>
           <td>${esc(r.contact_name || '—')}<span class="sub">${esc(r.designation)}</span></td>
           <td>${esc(r.phone)}<span class="sub">${esc([r.phone2, r.phone3].filter(Boolean).join(' · '))}</span></td>
-          <td class="hide-sm">${esc(r.email)}<span class="sub">${esc(r.email2)}</span></td><td>${esc(r.city)}</td><td>${pill(r.status)}</td></tr>`).join('') + '</tbody></table>';
+          <td class="hide-sm">${esc(r.email)}<span class="sub">${esc(r.email2)}</span></td><td>${esc(r.city || r.district)}<span class="sub">${esc([r.city && r.district !== r.city ? r.district : '', r.state].filter(Boolean).join(', '))}</span></td><td>${pill(r.status)}</td></tr>`).join('') + '</tbody></table>';
     }
-    ['#q', '#fStatus', '#fCat'].forEach(s => $(s).addEventListener('input', render));
+    ['#q', '#fStatus', '#fCat', '#fCity'].forEach(s => $(s).addEventListener('input', render));
+    $('#fState').addEventListener('input', () => { fillPlaces(); render(); });
+    $('#fDistrict').addEventListener('input', () => { fillPlaces(); render(); });
+    // State / District / City choices come from the contacts in this list; each narrows the next.
+    function fillPlaces() {
+      const rows = data[tab] || [], fs = $('#fState'), fd = $('#fDistrict'), fc = $('#fCity');
+      const opts = (sel, label, vals) => {
+        const v = sel.value, list = [...new Set(vals.filter(Boolean))].sort();
+        sel.innerHTML = `<option value="">${label}</option>` + list.map(x => `<option>${esc(x)}</option>`).join('');
+        sel.value = list.indexOf(v) >= 0 ? v : '';
+        sel.hidden = !list.length;
+      };
+      opts(fs, 'All states', rows.map(r => r.state));
+      opts(fd, 'All districts', rows.filter(r => !fs.value || r.state === fs.value).map(r => r.district));
+      opts(fc, 'All cities', rows.filter(r => (!fs.value || r.state === fs.value) && (!fd.value || r.district === fd.value)).map(r => r.city));
+    }
     $('#listWrap').addEventListener('click', e => { const tr = e.target.closest('tr[data-id]'); if (tr) openContact(data[tab].find(r => r.id === tr.dataset.id)); });
 
     /* ---------- contact editor ---------- */
     const dlg = $('#cDlg'), cf = $('#cForm');
-    const FIELDS = ['company', 'category', 'contact_name', 'designation', 'phone', 'phone2', 'phone3', 'email', 'email2', 'website', 'city', 'status', 'address', 'notes'];
+    const FIELDS = ['company', 'category', 'contact_name', 'designation', 'phone', 'phone2', 'phone3', 'email', 'email2', 'website', 'city', 'district', 'state', 'status', 'address', 'notes'];
     function openContact(r) {
       editing = r || null; const other = tab === 'buyers' ? 'Sellers' : 'Buyers';
       cf.category.innerHTML = '<option value=""></option>' + (meta ? meta.categories[tab] : []).map(c => `<option>${esc(c)}</option>`).join('');
@@ -622,7 +646,7 @@
         ['Email', r.email ? link('mailto:' + r.email, r.email) : ''],
         ['Email 2', r.email2 ? link('mailto:' + r.email2, r.email2) : ''],
         ['Website', r.website ? link(/^https?:/.test(r.website) ? r.website : 'https://' + r.website, r.website, true) : ''],
-        ['Address', esc(r.address)], ['City', esc(r.city)], ['Notes', esc(r.notes)],
+        ['Address', esc(r.address)], ['City', esc(r.city)], ['District', esc(r.district)], ['State', esc(r.state)], ['Notes', esc(r.notes)],
       ];
       $('#cView').innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v || '<span class="none">—</span>'}</dd>`).join('');
     }
@@ -1105,7 +1129,7 @@
 
     /* ---------- export ---------- */
     $('#csvBtn').onclick = () => {
-      const cols = ['id', 'status', 'category', 'company', 'contact_name', 'designation', 'phone', 'phone2', 'phone3', 'email', 'email2', 'website', 'address', 'city', 'notes'];
+      const cols = ['id', 'status', 'category', 'company', 'contact_name', 'designation', 'phone', 'phone2', 'phone3', 'email', 'email2', 'website', 'address', 'city', 'district', 'state', 'notes'];
       const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
       const csv = [cols.join(',')].concat(filtered().map(r => cols.map(c => q(r[c])).join(','))).join('\r\n');
       const a = document.createElement('a');
