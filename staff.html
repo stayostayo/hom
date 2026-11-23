@@ -81,6 +81,19 @@
     dialog::backdrop{background:#0b1a12b3}
     .dlg-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:1}
     .dlg-head h3{font-size:22px}
+    /* STAYO message box (instead of the browser's own pop-ups) */
+    dialog.ask{width:min(440px,calc(100% - 32px));border-radius:12px;overflow:hidden}
+    .ask-head{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:var(--green);color:#fff}
+    .ask-brand{display:flex;align-items:baseline;gap:8px}
+    .ask-brand b{font-weight:700;letter-spacing:.22em;font-size:15px}
+    .ask-brand span{font-size:12px;color:var(--peach);letter-spacing:.04em}
+    .ask-x{border:0;background:none;color:#fff;font-size:22px;line-height:1;cursor:pointer;padding:2px 4px;opacity:.8}.ask-x:hover{opacity:1}
+    .ask-body{padding:20px 22px 8px}
+    .ask-body h3{font-size:22px;margin-bottom:8px}
+    .ask-body p{margin:0;color:var(--muted);font-size:15px;white-space:pre-line}
+    .ask-foot{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:10px;padding:18px 22px 20px}
+    .btn.danger{background:var(--err);border-color:var(--err);color:#fff}.btn.danger:hover{background:#8f1e17}
+    @media(max-width:480px){.ask-foot{flex-direction:column-reverse}.ask-foot .btn{width:100%}}
     .x{border:0;background:var(--cream);width:40px;height:40px;border-radius:50%;font-size:22px;cursor:pointer;color:var(--green);flex:none}
     .dlg-body{padding:18px 20px;display:grid;gap:14px}
     .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -373,6 +386,12 @@
 
   <datalist id="dlDistricts"><option>Thiruvananthapuram</option><option>Kollam</option><option>Pathanamthitta</option><option>Alappuzha</option><option>Kottayam</option><option>Idukki</option><option>Ernakulam</option><option>Thrissur</option><option>Palakkad</option><option>Malappuram</option><option>Kozhikode</option><option>Wayanad</option><option>Kannur</option><option>Kasaragod</option></datalist>
   <datalist id="dlStates"><option>Kerala</option><option>Tamil Nadu</option><option>Karnataka</option><option>Goa</option><option>Maharashtra</option><option>Puducherry</option><option>Andhra Pradesh</option><option>Telangana</option><option>Delhi</option><option>Lakshadweep</option></datalist>
+  <dialog class="ask" id="askDlg" aria-labelledby="askTitle" aria-describedby="askText">
+    <div class="ask-head"><div class="ask-brand"><b>STAYO</b><span>HOM Staff Area</span></div>
+      <button class="ask-x" type="button" data-ans="cancel" aria-label="Close">&times;</button></div>
+    <div class="ask-body"><h3 id="askTitle"></h3><p id="askText"></p></div>
+    <div class="ask-foot" id="askFoot"></div>
+  </dialog>
   <div class="toast" id="toast" role="status" hidden></div>
 
   <footer class="sfoot"><div class="js-ver"></div></footer>
@@ -430,6 +449,22 @@
       if (!j.ok) { const e = new Error(j.error || 'Something went wrong.'); e.data = j; throw e; }
       return j;
     }
+    // ask({ title, text, ok, cancel, alt, danger }) -> 'ok' | 'alt' | 'cancel'
+    function ask(o) {
+      const d = $('#askDlg');
+      $('#askTitle').textContent = o.title || 'Please confirm'; $('#askText').textContent = o.text || '';
+      $('#askFoot').innerHTML = `<button class="btn ghost" type="button" data-ans="cancel">${esc(o.cancel || 'CANCEL')}</button>` +
+        (o.alt ? `<button class="btn ghost" type="button" data-ans="alt">${esc(o.alt)}</button>` : '') +
+        `<button class="btn ${o.danger ? 'danger' : 'rust'}" type="button" data-ans="ok">${esc(o.ok || 'OK')}</button>`;
+      return new Promise(res => {
+        const done = a => { d.removeEventListener('click', click); d.removeEventListener('cancel', esc_); d.close(); res(a); };
+        const click = e => { const b = e.target.closest('[data-ans]'); if (b) done(b.dataset.ans); else if (e.target === d) done('cancel'); };
+        const esc_ = e => { e.preventDefault(); done('cancel'); };
+        d.addEventListener('click', click); d.addEventListener('cancel', esc_);
+        d.showModal(); d.querySelector('[data-ans="ok"]').focus();
+      });
+    }
+    const sure = async o => (await ask(o)) === 'ok';
     function toast(t) { const el = $('#toast'); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => el.hidden = true, 3500); }
     function busy(btn, on) { if (btn) btn.disabled = on; }
 
@@ -620,7 +655,7 @@
       const rm = e.target.closest('[data-rm]');
       if (rm) {
         e.stopPropagation();
-        if (!confirm('Remove this photo from the contact? (The file stays in Google Drive.)')) return;
+        if (!await sure({ title: 'Remove this photo?', text: 'It will be taken off this contact. The file stays in Google Drive.', ok: 'REMOVE', danger: true })) return;
         try { const j = await api('staff:detach', { tab, id: editing.id, fileId: rm.dataset.rm }); updateRow(j.row); photoIdx = 0; showPhotos(editing); toast('Photo removed.'); }
         catch (err) { toast(err.message); }
         return;
@@ -727,7 +762,10 @@
         catch (err) {
           const d = err.data && err.data.duplicate;
           if (!d) throw err;
-          if (confirm(err.message + '\n\nOK = open the existing contact\nCancel = save this one anyway')) {
+          const ans = await ask({ title: 'Already in the list', text: err.message + '\n\nOpen the existing contact, or save this one as a separate entry?',
+                                  ok: 'OPEN EXISTING', alt: 'SAVE ANYWAY', cancel: 'BACK' });
+          if (ans === 'cancel') { busy(btn, false); return; }
+          if (ans === 'ok') {
             busy(btn, false); dlg.close();
             if (tab !== d.tab) openTab(d.tab);
             const go = () => { const ex = (data[d.tab] || []).find(x => x.id === d.id); if (ex) openContact(ex); else setTimeout(go, 300); };
@@ -754,8 +792,8 @@
       catch (err) { $('#cRawText').textContent = err.message; }
     });
     $('#rereadBtn').onclick = () => rereadCard(false);
-    $('#replaceBtn').onclick = () => {
-      if (confirm('Replace company, name, title, phones, emails, website, address and city with what is read from the photos now? Status and notes are kept.')) rereadCard(true);
+    $('#replaceBtn').onclick = async () => {
+      if (await sure({ title: 'Replace all details?', text: 'Company, name, title, phones, emails, website and address will be replaced with what is read from the photos now. Status and notes are kept.', ok: 'REPLACE ALL' })) rereadCard(true);
     };
     async function rereadCard(replaceAll) {
       if (!editing) return; const btn = $(replaceAll ? '#replaceBtn' : '#rereadBtn'), m = $('#cMsg'); busy(btn, true);
@@ -773,12 +811,12 @@
     }
     $('#moveBtn').onclick = async () => {
       const to = tab === 'buyers' ? 'sellers' : 'buyers';
-      if (!editing || !confirm(`Move ${editing.company || editing.id} to ${LABEL[to][0]}?`)) return;
+      if (!editing || !await sure({ title: 'Move to ' + LABEL[to][0] + '?', text: `${editing.company || editing.id} will be moved from ${LABEL[tab][0]} to ${LABEL[to][0]}.`, ok: 'MOVE' })) return;
       try { await api('staff:move', { from: tab, to, id: editing.id }); dlg.close(); data[to] = null; await load(tab); load(to, true); toast('Moved to ' + LABEL[to][0] + '.'); }
       catch (err) { $('#cMsg').className = 'msg err'; $('#cMsg').textContent = err.message; }
     };
     $('#delBtn').onclick = async () => {
-      if (!editing || !confirm(`Delete ${editing.company || editing.id}? This cannot be undone.`)) return;
+      if (!editing || !await sure({ title: 'Delete this contact?', text: `${editing.company || editing.id} will be deleted. This cannot be undone.`, ok: 'DELETE', danger: true })) return;
       try { await api('staff:delete', { tab, id: editing.id }); data[tab] = data[tab].filter(r => r.id !== editing.id); counts(); render(); dlg.close(); toast('Deleted.'); }
       catch (err) { $('#cMsg').className = 'msg err'; $('#cMsg').textContent = err.message; }
     };
@@ -1207,7 +1245,7 @@
       } catch (err) { m.className = 'msg err'; m.textContent = err.message; }
     });
     $('#uDel').onclick = async () => {
-      if (!editingUser || !confirm(`Delete user ${editingUser.username}? They will no longer be able to sign in.`)) return;
+      if (!editingUser || !await sure({ title: 'Delete this user?', text: `${editingUser.username} will no longer be able to sign in.`, ok: 'DELETE USER', danger: true })) return;
       try { const j = await api('staff:userDelete', { username: editingUser.username }); users = j.users; renderUsers(); ud.close(); toast('User deleted.'); }
       catch (err) { $('#uMsg').className = 'msg err'; $('#uMsg').textContent = err.message; }
     };
