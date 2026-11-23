@@ -119,6 +119,13 @@
     .reread{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
     .rawbox summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--green)}
     .rawbox pre{white-space:pre-wrap;font-size:12px;background:#f7f5ef;border:1px solid var(--line);border-radius:4px;padding:10px;max-height:220px;overflow:auto;margin:8px 0 0}
+    .view{display:grid;grid-template-columns:150px 1fr;gap:0;margin:0;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+    .view dt,.view dd{margin:0;padding:10px 12px;border-bottom:1px solid #f0ece3;font-size:14px}
+    .view dt{background:#fbf9f4;color:var(--muted);font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+    .view dd{word-break:break-word;white-space:pre-line}
+    .view dt:last-of-type,.view dd:last-of-type{border-bottom:0}
+    .view .none{color:#b0aa9c}
+    @media(max-width:760px){.view{grid-template-columns:1fr}.view dt{padding-bottom:2px;border-bottom:0}.view dd{padding-top:2px}}
     .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--green-deep);color:#fff;padding:12px 18px;border-radius:6px;font-size:14px;z-index:50;box-shadow:0 8px 24px #0004;max-width:calc(100% - 32px)}
 
     @media(max-width:760px){
@@ -224,6 +231,8 @@
       <div class="dlg-body">
         <div class="card-photo" id="cPhoto" hidden></div>
         <div class="quick" id="cQuick"></div>
+        <dl class="view" id="cView"></dl>
+        <div id="cEdit">
         <div class="grid2">
           <label class="field">Company / property<input name="company"></label>
           <label class="field">Category<select name="category"></select></label>
@@ -242,13 +251,17 @@
           <button class="btn ghost" type="button" id="rereadBtn">READ THE CARD AGAIN</button>
           <span class="meta">Fills only the empty fields – your corrections are kept.</span>
         </div>
+        </div>
         <details class="rawbox" id="cRaw" hidden><summary>Text read from the card</summary><pre id="cRawText">Loading…</pre></details>
         <p class="meta" id="cMeta"></p>
         <p class="msg" id="cMsg" role="status"></p>
       </div>
-      <div class="dlg-foot">
+      <div class="dlg-foot" id="cViewFoot">
+        <div class="right"><button class="btn ghost" type="button" data-close>Close</button><button class="btn" type="button" id="editBtn">EDIT</button></div>
+      </div>
+      <div class="dlg-foot" id="cEditFoot">
         <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn ghost" type="button" id="moveBtn">Move to Sellers</button><button class="btn danger" type="button" id="delBtn" hidden>Delete</button></div>
-        <div class="right"><button class="btn ghost" type="button" data-close>Cancel</button><button class="btn" type="submit" id="cSave">SAVE</button></div>
+        <div class="right"><button class="btn ghost" type="button" id="cCancel">Cancel</button><button class="btn" type="submit" id="cSave">SAVE</button></div>
       </div>
     </form>
   </dialog>
@@ -482,6 +495,7 @@
       cf.category.innerHTML = '<option value=""></option>' + (meta ? meta.categories[tab] : []).map(c => `<option>${esc(c)}</option>`).join('');
       FIELDS.forEach(k => cf[k].value = r ? (r[k] || '') : (k === 'status' ? 'Verified' : ''));
       $('#cTitle').textContent = r ? (r.company || r.contact_name || 'Contact') : 'Add ' + (tab === 'buyers' ? 'buyer' : 'seller');
+      renderView(r);
       $('#cId').textContent = r ? r.id + ' · ' + LABEL[tab][0] : LABEL[tab][0];
       $('#cMeta').textContent = r ? [r.source, r.added_by && 'added by ' + r.added_by, r.updated_by && 'last edited by ' + r.updated_by].filter(Boolean).join(' · ') : '';
       $('#cMsg').textContent = ''; $('#moveBtn').hidden = !r; $('#moveBtn').textContent = 'Move to ' + other;
@@ -494,8 +508,38 @@
       if (r && r.card_file_id) cardPhoto(r.card_file_id)
         .then(url => { if (editing === r) showCard(ph, url, r.card_box); })
         .catch(err => { ph.textContent = 'Card photo not available: ' + err.message; });
+      setMode(r ? 'view' : 'edit');
       dlg.showModal();
     }
+
+    // View mode (default for an existing contact) shows plain details; Edit switches to the form.
+    function setMode(mode) {
+      const v = mode === 'view';
+      $('#cView').hidden = !v; $('#cViewFoot').hidden = !v;
+      $('#cEdit').hidden = v; $('#cEditFoot').hidden = v;
+      $('#cMsg').textContent = '';
+      if (!v) setTimeout(() => cf.company.focus({ preventScroll: true }), 0);
+    }
+    function renderView(r) {
+      if (!r) { $('#cView').innerHTML = ''; return; }
+      const tel = p => String(p || '').replace(/[^\d+]/g, '');
+      const link = (href, text, ext) => `<a href="${esc(href)}"${ext ? ' target="_blank" rel="noopener"' : ''}>${esc(text)}</a>`;
+      const rows = [
+        ['Company', esc(r.company)], ['Category', esc(r.category)], ['Status', r.status ? pill(r.status) : ''],
+        ['Contact', esc(r.contact_name)], ['Designation', esc(r.designation)],
+        ['Phone', r.phone ? link('tel:' + tel(r.phone), r.phone) : ''], ['Phone 2', r.phone2 ? link('tel:' + tel(r.phone2), r.phone2) : ''],
+        ['Email', r.email ? link('mailto:' + r.email, r.email) : ''],
+        ['Website', r.website ? link(/^https?:/.test(r.website) ? r.website : 'https://' + r.website, r.website, true) : ''],
+        ['Address', esc(r.address)], ['City', esc(r.city)], ['Notes', esc(r.notes)],
+      ];
+      $('#cView').innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v || '<span class="none">—</span>'}</dd>`).join('');
+    }
+    $('#editBtn').onclick = () => setMode('edit');
+    $('#cCancel').onclick = () => {
+      if (!editing) { dlg.close(); return; }
+      FIELDS.forEach(k => cf[k].value = editing[k] || '');   // drop unsaved changes
+      setMode('view');
+    };
     // Card photos are cached per file: a group photo is fetched once and cropped for each of its cards.
     const photoCache = {};
     function cardPhoto(fileId) {
@@ -536,7 +580,13 @@
         const j = await api('staff:save', { tab, row });
         const list = data[tab], i = list.findIndex(x => x.id === j.row.id);
         if (i >= 0) list[i] = j.row; else list.push(j.row);
-        counts(); render(); dlg.close(); toast('Saved ' + j.row.id + '.');
+        counts(); render(); toast('Saved ' + j.row.id + '.');
+        // stay open, showing the saved details
+        editing = j.row; quick(j.row); renderView(j.row);
+        $('#cTitle').textContent = j.row.company || j.row.contact_name || 'Contact';
+        $('#cId').textContent = j.row.id + ' · ' + LABEL[tab][0];
+        $('#moveBtn').hidden = false; $('#delBtn').hidden = session.user.role !== 'Admin';
+        setMode('view');
       } catch (err) { m.className = 'msg err'; m.textContent = err.message; }
       busy(btn, false);
     });
