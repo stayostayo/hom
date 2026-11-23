@@ -260,7 +260,7 @@
           <label class="btn ghost"><input type="file" id="upCamera" accept="image/*" capture="environment" hidden>TAKE A PHOTO</label>
           <label class="btn ghost"><input type="file" id="upFiles" accept="image/*" multiple hidden>CHOOSE PHOTOS</label>
         </div>
-        <p class="meta">One card or many per photo (up to about 24). Lay the cards flat in good light, without glare. You can add several photos.</p>
+        <p class="meta" id="upHint">One card per photo: fill the frame with the card, flat, in good light, without glare. You can add many photos at once.</p>
         <div class="thumbs-grid" id="upThumbs"></div>
         <p class="msg" id="upMsg" role="status"></p>
       </div>
@@ -590,7 +590,11 @@
     const up = $('#upDlg'), upForm = $('#upForm'); let picked = [];
     $('#uploadBtn').onclick = () => {
       picked = []; upForm.reset(); upForm.list.value = tab === 'sellers' ? 'sellers' : 'buyers';
-      $('#upMsg').textContent = ''; drawPicked(); up.showModal();
+      $('#upMsg').textContent = ''; drawPicked();
+      $('#upHint').textContent = meta && meta.reader && meta.reader !== 'Google OCR'
+        ? 'One card or many per photo (up to about 24). Lay the cards flat in good light, without glare. You can add several photos.'
+        : 'One card per photo: fill the frame with the card, flat, in good light, without glare. You can add many photos at once.';
+      up.showModal();
     };
     ['#upCamera', '#upFiles'].forEach(s => $(s).addEventListener('change', e => {
       [...e.target.files].forEach(f => picked.push({ file: f, url: URL.createObjectURL(f) }));
