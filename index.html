@@ -400,7 +400,7 @@
     const SITE_V = window.HOM_VERSION || {};
     const showVersion = srv => {
       const el = $('#ver'), v = SITE_V.version || 'dev';
-      el.textContent = 'HOM – Feel at Home · Version ' + v + (SITE_V.date ? ' · ' + SITE_V.date : '') +
+      el.textContent = 'HOM – Feel at Home · ' + v + (SITE_V.date ? ' · ' + SITE_V.date : '') +
         (srv && srv.version && srv.version !== v ? ' · server still updating (' + srv.version + ')' : '');
       el.title = 'Updated ' + [SITE_V.date, SITE_V.time].filter(Boolean).join(' ') + ' · ' + (SITE_V.commit || '');
     };

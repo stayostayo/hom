@@ -318,7 +318,7 @@
     let SERVER_V = null, serverMsg = 'checking…';
     function renderVersions() {
       const v = SITE_V.version || 'dev';
-      let line = `<b>HOM Staff Area</b> · STAYO Partners · Version <b>${esc(v)}</b>${SITE_V.date ? ' · ' + esc(SITE_V.date) : ''}`, warn = '';
+      let line = `<b>HOM Staff Area</b> · STAYO Partners · <b>${esc(v)}</b>${SITE_V.date ? ' · ' + esc(SITE_V.date) : ''}`, warn = '';
       if (!SERVER_V) warn = serverMsg === 'checking…' ? '' : 'server ' + serverMsg;
       else if (!SERVER_V.staff) warn = 'server is older than the staff area';
       else if (SERVER_V.version !== v) warn = 'server still updating (' + SERVER_V.version + ')';
