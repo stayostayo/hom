@@ -115,6 +115,7 @@
     .thumbs-grid button{position:absolute;top:4px;right:4px;width:28px;height:28px;border-radius:50%;border:0;background:#000a;color:#fff;cursor:pointer;font-size:16px;line-height:1}
     .thumbs-grid figcaption{position:absolute;left:0;right:0;bottom:0;background:#000a;color:#fff;font-size:11px;padding:2px 6px}
     .skipped{margin-top:10px}.skipped .btn{margin-top:8px}
+    .dupes{margin-top:8px;font-size:13px}.dupes ul{margin:4px 0 0;padding-left:18px}
     .scan-errors{margin:8px 0 0;padding-left:18px;color:var(--err);font-size:13px}
     .reread{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
     .rawbox summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--green)}
@@ -667,7 +668,19 @@
       e.preventDefault(); const btn = $('#cSave'), m = $('#cMsg'); busy(btn, true);
       const row = Object.fromEntries(FIELDS.map(k => [k, cf[k].value.trim()])); if (editing) row.id = editing.id;
       try {
-        const j = await api('staff:save', { tab, row });
+        let j;
+        try { j = await api('staff:save', { tab, row }); }
+        catch (err) {
+          const d = err.data && err.data.duplicate;
+          if (!d) throw err;
+          if (confirm(err.message + '\n\nOK = open the existing contact\nCancel = save this one anyway')) {
+            busy(btn, false); dlg.close();
+            if (tab !== d.tab) openTab(d.tab);
+            const go = () => { const ex = (data[d.tab] || []).find(x => x.id === d.id); if (ex) openContact(ex); else setTimeout(go, 300); };
+            go(); return;
+          }
+          j = await api('staff:save', { tab, row: Object.assign({ force: true }, row) });
+        }
         const list = data[tab], i = list.findIndex(x => x.id === j.row.id);
         if (i >= 0) list[i] = j.row; else list.push(j.row);
         counts(); render(); toast('Saved ' + j.row.id + '.');
@@ -720,7 +733,7 @@
     $('#scanBtn').onclick = () => runScan();
     async function runScan(prefix) {
       const btn = $('#scanBtn'), n = $('#scanNotice'); busy(btn, true); n.hidden = false;
-      const total = { processed: 0, cards: 0, buyers: 0, sellers: 0, toCheck: 0, failed: 0 }, errors = [];
+      const total = { processed: 0, cards: 0, buyers: 0, sellers: 0, toCheck: 0, failed: 0, duplicates: 0 }, errors = [], dups = [];
       let skipped = [];
       try {
         for (let round = 0; round < 20; round++) {
@@ -737,6 +750,7 @@
           }
           Object.keys(total).forEach(k => total[k] += j[k] || 0);
           (j.errors || []).forEach(e => errors.push(e));
+          (j.duplicateList || []).forEach(d => dups.push(d));
           skipped = j.skipped || skipped;
           if (!j.remaining) break;
         }
@@ -746,6 +760,9 @@
             (total.failed ? ` · ${total.failed} photo(s) could not be read (see below)` : '') + '.'
           : (total.failed ? `${total.failed} photo(s) could not be read (see below).`
                           : skipped.length ? 'No new photos to read.' : 'No new visiting cards found. Use “Add card photos”, then scan again.'));
+        if (dups.length) n.innerHTML += `<div class="dupes"><b>${dups.length} duplicate(s) not added again</b> – ` +
+          'merged into the existing contact instead:<ul>' + dups.map(d => `<li><b>${esc(d.file)}</b> → ${esc(d.id)}${d.company ? ' ' + esc(d.company) : ''} ` +
+          `<span class="meta">(${esc(d.how)}${d.filled && d.filled.length ? '; added ' + esc(d.filled.join(', ').replace(/_/g, ' ')) : ''})</span></li>`).join('') + '</ul></div>';
         if (errors.length) n.innerHTML += '<ul class="scan-errors">' + errors.map(e => `<li><b>${esc(e.file)}:</b> ${esc(e.error)}</li>`).join('') + '</ul>';
         if (skipped.length) {
           n.innerHTML += `<div class="skipped"><b>${skipped.length} photo(s) were skipped after 3 failed tries:</b><ul class="scan-errors">` +
