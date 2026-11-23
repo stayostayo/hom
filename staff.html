@@ -126,6 +126,8 @@
     .view dt:last-of-type,.view dd:last-of-type{border-bottom:0}
     .view .none{color:#b0aa9c}
     @media(max-width:760px){.view{grid-template-columns:1fr}.view dt{padding-bottom:2px;border-bottom:0}.view dd{padding-top:2px}}
+    th.num,td.num{width:44px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;padding-right:6px}
+    @media(max-width:760px){table.list td.num{float:right;width:auto;padding:0 0 0 8px;font-size:12px}table.list td.num::before{content:"#"}}
     .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--green-deep);color:#fff;padding:12px 18px;border-radius:6px;font-size:14px;z-index:50;box-shadow:0 8px 24px #0004;max-width:calc(100% - 32px)}
 
     @media(max-width:760px){
@@ -477,8 +479,9 @@
       $('#count').textContent = `${rows.length} of ${data[tab].length}` + (toCheck ? ` · ${toCheck} to check` : '');
       if (!data[tab].length) { $('#listWrap').innerHTML = `<div class="empty">No ${tab} yet. Add one, or scan the visiting cards.</div>`; return; }
       if (!rows.length) { $('#listWrap').innerHTML = '<div class="empty">Nothing matches your search.</div>'; return; }
-      $('#listWrap').innerHTML = `<table class="list"><thead><tr><th>Company</th><th>Contact</th><th>Phone</th><th class="hide-sm">Email</th><th>City</th><th>Status</th></tr></thead><tbody>` +
-        rows.map(r => `<tr data-id="${esc(r.id)}">
+      $('#listWrap').innerHTML = `<table class="list"><thead><tr><th class="num">#</th><th>Company</th><th>Contact</th><th>Phone</th><th class="hide-sm">Email</th><th>City</th><th>Status</th></tr></thead><tbody>` +
+        rows.map((r, n) => `<tr data-id="${esc(r.id)}">
+          <td class="num">${n + 1}</td>
           <td><b>${esc(r.company || '—')}</b><span class="sub">${esc([r.category, r.id].filter(Boolean).join(' · '))}</span></td>
           <td>${esc(r.contact_name || '—')}<span class="sub">${esc(r.designation)}</span></td>
           <td>${esc(r.phone)}<span class="sub">${esc(r.phone2)}</span></td>
@@ -739,8 +742,8 @@
     }
     const when = iso => iso ? new Date(iso).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : 'Never';
     function renderUsers() {
-      $('#usersWrap').innerHTML = `<table class="list"><thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Status</th><th>Last sign-in</th></tr></thead><tbody>` +
-        users.map(u => `<tr data-user="${esc(u.username)}"><td><b>${esc(u.username)}</b></td><td>${esc(u.name)}</td><td>${esc(u.role)}</td>
+      $('#usersWrap').innerHTML = `<table class="list"><thead><tr><th class="num">#</th><th>Username</th><th>Name</th><th>Role</th><th>Status</th><th>Last sign-in</th></tr></thead><tbody>` +
+        users.map((u, n) => `<tr data-user="${esc(u.username)}"><td class="num">${n + 1}</td><td><b>${esc(u.username)}</b></td><td>${esc(u.name)}</td><td>${esc(u.role)}</td>
           <td>${u.active ? (u.mustChange ? '<span class="pill check">Must set password</span>' : '<span class="pill ok">Active</span>') : '<span class="pill off">Disabled</span>'}</td>
           <td>${esc(when(u.lastLogin))}</td></tr>`).join('') + '</tbody></table>';
     }
