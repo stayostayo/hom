@@ -111,6 +111,7 @@
     .thumbs-grid img{width:100%;height:100%;object-fit:cover;display:block}
     .thumbs-grid button{position:absolute;top:4px;right:4px;width:28px;height:28px;border-radius:50%;border:0;background:#000a;color:#fff;cursor:pointer;font-size:16px;line-height:1}
     .thumbs-grid figcaption{position:absolute;left:0;right:0;bottom:0;background:#000a;color:#fff;font-size:11px;padding:2px 6px}
+    .scan-errors{margin:8px 0 0;padding-left:18px;color:var(--err);font-size:13px}
     .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--green-deep);color:#fff;padding:12px 18px;border-radius:6px;font-size:14px;z-index:50;box-shadow:0 8px 24px #0004;max-width:calc(100% - 32px)}
 
     @media(max-width:760px){
@@ -538,21 +539,23 @@
     $('#scanBtn').onclick = () => runScan();
     async function runScan(prefix) {
       const btn = $('#scanBtn'), n = $('#scanNotice'); busy(btn, true); n.hidden = false;
-      const total = { processed: 0, cards: 0, buyers: 0, sellers: 0, toCheck: 0, failed: 0 };
+      const total = { processed: 0, cards: 0, buyers: 0, sellers: 0, toCheck: 0, failed: 0 }, errors = [];
       try {
         for (let round = 0; round < 20; round++) {
           n.textContent = round ? `Scanning… ${total.processed} photo(s), ${total.cards} card(s) read so far.`
                                 : 'Scanning the visiting cards folder… a photo with many cards can take a minute.';
           const j = await api('staff:scan');
           Object.keys(total).forEach(k => total[k] += j[k] || 0);
+          (j.errors || []).forEach(e => errors.push(e));
           if (!j.remaining) break;
         }
         n.innerHTML = (prefix || '') + (total.processed
           ? `<b>${total.processed} photo(s) scanned, ${total.cards} card(s) found:</b> ${total.buyers} buyer(s), ${total.sellers} seller(s)` +
             (total.toCheck ? ` · <b>${total.toCheck} marked “To check”</b> – please compare them with the card photo` : '') +
-            (total.failed ? ` · ${total.failed} photo(s) could not be read and will be retried on the next scan (see the CardScans tab)` : '') + '.'
-          : (total.failed ? `${total.failed} photo(s) could not be read; they will be retried on the next scan (details in the CardScans tab).`
+            (total.failed ? ` · ${total.failed} photo(s) could not be read and will be retried on the next scan` : '') + '.'
+          : (total.failed ? `${total.failed} photo(s) could not be read; they will be retried on the next scan.`
                           : 'No new visiting cards found. Use “Add card photos”, then scan again.'));
+        if (errors.length) n.innerHTML += '<ul class="scan-errors">' + errors.map(e => `<li><b>${esc(e.file)}:</b> ${esc(e.error)}</li>`).join('') + '</ul>';
         data = { buyers: null, sellers: null }; await load(tab); load(tab === 'buyers' ? 'sellers' : 'buyers', true);
       } catch (err) { n.textContent = err.message; }
       busy(btn, false);
