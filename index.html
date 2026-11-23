@@ -398,8 +398,12 @@
     const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     $('#year').textContent = new Date().getFullYear();
     const SITE_V = window.HOM_VERSION || {};
-    const showVersion = srv => { $('#ver').textContent = 'Website: ' + (SITE_V.updated || '?') + ' (' + (SITE_V.commit || '?') + ')' +
-      (srv ? ' · Server: ' + (srv.updated || srv.version) + ' (' + srv.commit + ')' : ''); };
+    const showVersion = srv => {
+      const el = $('#ver'), v = SITE_V.version || 'dev';
+      el.textContent = v + (SITE_V.date ? ' · ' + SITE_V.date : '') +
+        (srv && srv.version && srv.version !== v ? ' · server still updating (' + srv.version + ')' : '');
+      el.title = 'Updated ' + [SITE_V.date, SITE_V.time].filter(Boolean).join(' ') + ' · ' + (SITE_V.commit || '');
+    };
     showVersion(null);
 
     // Built-in content (mirrors the Google Sheet). Replaced by live data when API_URL is set.

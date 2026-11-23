@@ -313,17 +313,20 @@
     const SITE_V = window.HOM_VERSION || {};
     let SERVER_V = null, serverMsg = 'checking…';
     function renderVersions() {
-      const site = `<span>Website: <b>${esc(SITE_V.updated || '?')}</b> (${esc(SITE_V.commit || '?')})</span>`;
-      const old = SERVER_V && !SERVER_V.staff;
-      const srv = SERVER_V
-        ? `<span class="${old ? 'vwarn' : ''}">Server: <b>${esc(SERVER_V.updated || SERVER_V.version || '?')}</b> (${esc(SERVER_V.commit || '?')})${old ? ' – older than the staff area' : ''}</span>`
-        : `<span class="vwarn">Server: ${esc(serverMsg)}</span>`;
-      $$('.js-ver').forEach(el => el.innerHTML = site + srv);
+      const v = SITE_V.version || 'dev';
+      let line = `Version <b>${esc(v)}</b>${SITE_V.date ? ' · ' + esc(SITE_V.date) : ''}`, warn = '';
+      if (!SERVER_V) warn = serverMsg === 'checking…' ? '' : 'server ' + serverMsg;
+      else if (!SERVER_V.staff) warn = 'server is older than the staff area';
+      else if (SERVER_V.version !== v) warn = 'server still updating (' + SERVER_V.version + ')';
+      const title = 'Updated ' + [SITE_V.date, SITE_V.time].filter(Boolean).join(' ') + ' · ' + (SITE_V.commit || '');
+      $$('.js-ver').forEach(el => { el.title = title;
+        el.innerHTML = `<span>${line}</span>` + (warn ? `<span class="vwarn">${esc(warn)}</span>` : ''); });
     }
     renderVersions();
     if (API) fetch(API + '?action=ping').then(r => r.json()).then(j => {
       // Servers from before the staff area have no "commit" field.
-      SERVER_V = { version: j.version, commit: j.commit || 'old', updated: j.updated, staff: !!j.commit };
+      // Servers from before the staff area have no "commit" field.
+      SERVER_V = { version: j.commit ? j.version : 'old', staff: !!j.commit };
       renderVersions();
     }).catch(() => { serverMsg = 'not reachable'; renderVersions(); });
     else { serverMsg = 'not connected'; renderVersions(); }
@@ -335,7 +338,7 @@
         body: JSON.stringify(Object.assign({ type, token: session && session.token }, body || {})) });
       let j; try { j = await r.json(); } catch (e) { throw new Error('The server did not answer. Please try again.'); }
       if (j.error === 'Unknown request') {
-        if (j.server) { SERVER_V = Object.assign({ staff: true }, j.server); renderVersions(); }
+        if (j.server) { SERVER_V = { version: j.server.version, staff: true }; renderVersions(); }
         throw new Error('The server is running an older version without the staff area (see "Server" below). Please try again in a few minutes.');
       }
       if (j.signedOut) { session = null; save(); show('login'); throw new Error(j.error); }
