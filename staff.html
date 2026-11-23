@@ -128,6 +128,12 @@
     @media(max-width:760px){.view{grid-template-columns:1fr}.view dt{padding-bottom:2px;border-bottom:0}.view dd{padding-top:2px}}
     th.num,td.num{width:44px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;padding-right:6px}
     @media(max-width:760px){table.list td.num{float:right;width:auto;padding:0 0 0 8px;font-size:12px}table.list td.num::before{content:"#"}}
+    .pstrip{display:flex;gap:8px;overflow-x:auto;padding:2px}
+    .pstrip .pt{position:relative;flex:none;width:86px;height:60px;border-radius:4px;overflow:hidden;background:#f3f0e8;border:2px solid transparent;cursor:pointer;padding:0}
+    .pstrip .pt.on{border-color:var(--rust)}
+    .pstrip .pt img{width:100%;height:100%;object-fit:cover;display:block}
+    .pstrip .pt .rm{position:absolute;top:2px;right:2px;width:22px;height:22px;border-radius:50%;border:0;background:#000b;color:#fff;font-size:14px;line-height:1;cursor:pointer}
+    .pstrip .add{flex:none;width:86px;height:60px;border:1px dashed #c9c2b1;border-radius:4px;background:#fff;color:var(--green);font-size:12px;font-weight:700;cursor:pointer;line-height:1.2}
     .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--green-deep);color:#fff;padding:12px 18px;border-radius:6px;font-size:14px;z-index:50;box-shadow:0 8px 24px #0004;max-width:calc(100% - 32px)}
 
     @media(max-width:760px){
@@ -232,6 +238,8 @@
       <div class="dlg-head"><div><div class="meta" id="cId"></div><h3 id="cTitle">Contact</h3></div><button class="x" type="button" data-close aria-label="Close">×</button></div>
       <div class="dlg-body">
         <div class="card-photo" id="cPhoto" hidden></div>
+        <div class="pstrip" id="cThumbs" hidden></div>
+        <input type="file" id="cAddPhotos" accept="image/*" multiple hidden>
         <div class="quick" id="cQuick"></div>
         <dl class="view" id="cView"></dl>
         <div id="cEdit">
@@ -242,6 +250,7 @@
           <label class="field">Designation<input name="designation"></label>
           <label class="field">Phone<input name="phone" inputmode="tel"></label>
           <label class="field">Phone 2<input name="phone2" inputmode="tel"></label>
+          <label class="field">Phone 3<input name="phone3" inputmode="tel"></label>
           <label class="field">Email<input name="email" type="email" autocapitalize="none"></label>
           <label class="field">Email 2<input name="email2" type="email" autocapitalize="none"></label>
           <label class="field">Website<input name="website" autocapitalize="none"></label>
@@ -284,6 +293,7 @@
           <label class="btn ghost"><input type="file" id="upCamera" accept="image/*" capture="environment" hidden>TAKE A PHOTO</label>
           <label class="btn ghost"><input type="file" id="upFiles" accept="image/*" multiple hidden>CHOOSE PHOTOS</label>
         </div>
+        <label class="switch"><input type="checkbox" id="upGroup"> <span>These photos are <b>ONE company</b> (front &amp; back, a folded card, or several cards of the same company)</span></label>
         <p class="meta" id="upHint">One card per photo: fill the frame with the card, flat, in good light, without glare. You can add many photos at once.</p>
         <div class="thumbs-grid" id="upThumbs"></div>
         <p class="msg" id="upMsg" role="status"></p>
@@ -471,7 +481,7 @@
     function filtered() {
       const q = $('#q').value.trim().toLowerCase(), st = $('#fStatus').value, cat = $('#fCat').value;
       return (data[tab] || []).filter(r => (!st || (r.status || 'To check') === st) && (!cat || r.category === cat) &&
-        (!q || ['id', 'company', 'contact_name', 'designation', 'phone', 'phone2', 'email', 'email2', 'website', 'city', 'address', 'notes']
+        (!q || ['id', 'company', 'contact_name', 'designation', 'phone', 'phone2', 'phone3', 'email', 'email2', 'website', 'city', 'address', 'notes']
           .some(k => String(r[k] || '').toLowerCase().indexOf(q) >= 0)));
     }
     function render() {
@@ -485,7 +495,7 @@
           <td class="num">${n + 1}</td>
           <td><b>${esc(r.company || '—')}</b><span class="sub">${esc([r.category, r.id].filter(Boolean).join(' · '))}</span></td>
           <td>${esc(r.contact_name || '—')}<span class="sub">${esc(r.designation)}</span></td>
-          <td>${esc(r.phone)}<span class="sub">${esc(r.phone2)}</span></td>
+          <td>${esc(r.phone)}<span class="sub">${esc([r.phone2, r.phone3].filter(Boolean).join(' · '))}</span></td>
           <td class="hide-sm">${esc(r.email)}<span class="sub">${esc(r.email2)}</span></td><td>${esc(r.city)}</td><td>${pill(r.status)}</td></tr>`).join('') + '</tbody></table>';
     }
     ['#q', '#fStatus', '#fCat'].forEach(s => $(s).addEventListener('input', render));
@@ -493,7 +503,7 @@
 
     /* ---------- contact editor ---------- */
     const dlg = $('#cDlg'), cf = $('#cForm');
-    const FIELDS = ['company', 'category', 'contact_name', 'designation', 'phone', 'phone2', 'email', 'email2', 'website', 'city', 'status', 'address', 'notes'];
+    const FIELDS = ['company', 'category', 'contact_name', 'designation', 'phone', 'phone2', 'phone3', 'email', 'email2', 'website', 'city', 'status', 'address', 'notes'];
     function openContact(r) {
       editing = r || null; const other = tab === 'buyers' ? 'Sellers' : 'Buyers';
       cf.category.innerHTML = '<option value=""></option>' + (meta ? meta.categories[tab] : []).map(c => `<option>${esc(c)}</option>`).join('');
@@ -505,20 +515,76 @@
       $('#cMsg').textContent = ''; $('#moveBtn').hidden = !r; $('#moveBtn').textContent = 'Move to ' + other;
       $('#delBtn').hidden = !r || session.user.role !== 'Admin';
       quick(r);
-      const ph = $('#cPhoto');
-      ph.hidden = !(r && r.card_file_id); ph.innerHTML = 'Loading card photo…';
       $('#cReread').hidden = $('#cRaw').hidden = !(r && r.card_file_id);
       $('#cRaw').open = false; $('#cRawText').textContent = 'Loading…'; $('#cRaw').dataset.id = r ? r.id : '';
-      if (r && r.card_file_id) cardPhoto(r.card_file_id)
-        .then(url => { if (editing === r) showCard(ph, url, r.card_box); })
-        .catch(err => { ph.textContent = 'Card photo not available: ' + err.message; });
+      photoIdx = 0;
       setMode(r ? 'view' : 'edit');
       dlg.showModal();
+    }
+
+    // ---------- photos of a contact: main photo + thumbnails; add / remove in edit mode ----------
+    let photoIdx = 0, editMode = false;
+    const photoIds = r => r ? [r.card_file_id].concat(String(r.extra_files || '').split(',')).map(x => String(x || '').trim())
+      .filter((x, i, a) => x && a.indexOf(x) === i) : [];
+    function showPhotos(r) {
+      const ids = photoIds(r), ph = $('#cPhoto'), strip = $('#cThumbs');
+      if (photoIdx >= ids.length) photoIdx = 0;
+      ph.hidden = !ids.length;
+      if (ids.length) {
+        const fid = ids[photoIdx];
+        ph.innerHTML = 'Loading card photo…';
+        cardPhoto(fid).then(url => { if (editing === r && photoIds(editing)[photoIdx] === fid) showCard(ph, url, photoIdx === 0 ? r.card_box : ''); })
+          .catch(err => { ph.textContent = 'Card photo not available: ' + err.message; });
+      }
+      const canAdd = editMode && r && r.id;
+      strip.hidden = !(ids.length > 1 || canAdd);
+      strip.innerHTML = ids.map((fid, k) => `<button type="button" class="pt${k === photoIdx ? ' on' : ''}" data-k="${k}" aria-label="Photo ${k + 1}">` +
+          `<img alt="" data-fid="${esc(fid)}">` + (editMode && ids.length > 1 ? `<span class="rm" data-rm="${esc(fid)}" role="button" aria-label="Remove photo">×</span>` : '') + '</button>').join('') +
+        (canAdd ? '<button type="button" class="add" id="cAddBtn">+ Add photos<br><small>back side, folds…</small></button>' : '');
+      strip.querySelectorAll('img[data-fid]').forEach(img => cardPhoto(img.dataset.fid).then(u => { img.src = u; }).catch(() => {}));
+    }
+    $('#cThumbs').addEventListener('click', async e => {
+      const rm = e.target.closest('[data-rm]');
+      if (rm) {
+        e.stopPropagation();
+        if (!confirm('Remove this photo from the contact? (The file stays in Google Drive.)')) return;
+        try { const j = await api('staff:detach', { tab, id: editing.id, fileId: rm.dataset.rm }); updateRow(j.row); photoIdx = 0; showPhotos(editing); toast('Photo removed.'); }
+        catch (err) { toast(err.message); }
+        return;
+      }
+      if (e.target.closest('#cAddBtn')) { $('#cAddPhotos').click(); return; }
+      const t = e.target.closest('.pt'); if (t) { photoIdx = +t.dataset.k; showPhotos(editing); }
+    });
+    $('#cAddPhotos').addEventListener('change', async e => {
+      const files = [...e.target.files]; e.target.value = '';
+      if (!files.length || !editing) return;
+      const m = $('#cMsg'); let added = 0;
+      for (let k = 0; k < files.length; k++) {
+        m.className = 'msg'; m.textContent = `Adding photo ${k + 1} of ${files.length}…`;
+        try { const { blob, mime } = await prepare(files[k]);
+              const j = await api('staff:attach', { tab, id: editing.id, mime, data: await toBase64(blob) }); updateRow(j.row); added++; }
+        catch (err) { m.className = 'msg err'; m.textContent = err.message; }
+      }
+      if (!added) return;
+      photoIdx = photoIds(editing).length - 1; showPhotos(editing);
+      m.className = 'msg'; m.textContent = `${added} photo(s) added. Reading them…`;
+      try {
+        const j = await api('staff:reread', { tab, id: editing.id }); updateRow(j.row);
+        FIELDS.forEach(k => { if (!cf[k].value.trim() && j.row[k]) cf[k].value = j.row[k]; });
+        m.className = 'msg ok'; m.textContent = `${added} photo(s) added.` + (j.filled.length ? ' Filled: ' + j.filled.join(', ').replace(/_/g, ' ') + '. Check them, then Save.' : ' No new details found on them.');
+      } catch (err) { m.className = 'msg err'; m.textContent = `${added} photo(s) added, but reading them failed: ${err.message}`; }
+    });
+    function updateRow(row) {
+      if (!row) return;
+      const list = data[tab], i = list.findIndex(x => x.id === row.id); if (i >= 0) list[i] = row;
+      editing = row; $('#cRaw').dataset.loaded = ''; $('#cReread').hidden = $('#cRaw').hidden = !row.card_file_id;
+      render();
     }
 
     // View mode (default for an existing contact) shows plain details; Edit switches to the form.
     function setMode(mode) {
       const v = mode === 'view';
+      editMode = !v; showPhotos(editing);
       $('#cView').hidden = !v; $('#cViewFoot').hidden = !v;
       $('#cEdit').hidden = v; $('#cEditFoot').hidden = v;
       $('#cMsg').textContent = '';
@@ -532,6 +598,7 @@
         ['Company', esc(r.company)], ['Category', esc(r.category)], ['Status', r.status ? pill(r.status) : ''],
         ['Contact', esc(r.contact_name)], ['Designation', esc(r.designation)],
         ['Phone', r.phone ? link('tel:' + tel(r.phone), r.phone) : ''], ['Phone 2', r.phone2 ? link('tel:' + tel(r.phone2), r.phone2) : ''],
+        ['Phone 3', r.phone3 ? link('tel:' + tel(r.phone3), r.phone3) : ''],
         ['Email', r.email ? link('mailto:' + r.email, r.email) : ''],
         ['Email 2', r.email2 ? link('mailto:' + r.email2, r.email2) : ''],
         ['Website', r.website ? link(/^https?:/.test(r.website) ? r.website : 'https://' + r.website, r.website, true) : ''],
@@ -608,7 +675,7 @@
         const j = await api('staff:reread', { tab, id: editing.id });
         const list = data[tab], i = list.findIndex(x => x.id === j.row.id); if (i >= 0) list[i] = j.row;
         FIELDS.forEach(k => { if (!cf[k].value.trim() && j.row[k]) cf[k].value = j.row[k]; });
-        editing = j.row; $('#cRaw').dataset.loaded = '';
+        editing = j.row; $('#cRaw').dataset.loaded = ''; showPhotos(editing);
         m.className = 'msg ok'; m.textContent = j.filled.length ? 'Filled: ' + j.filled.join(', ').replace(/_/g, ' ') + '. Check them, then Save.'
                                                                 : 'Nothing new was found on the card.';
         render();
@@ -710,12 +777,13 @@
     upForm.addEventListener('submit', async e => {
       e.preventDefault();
       const list = upForm.list.value, go = $('#upGo'), m = $('#upMsg'); busy(go, true);
+      const group = $('#upGroup').checked && picked.length > 1 ? Date.now().toString(36) + Math.random().toString(36).slice(2, 8) : '';
       let okCount = 0; const errors = [];
       for (let i = 0; i < picked.length; i++) {
         m.className = 'msg'; m.textContent = `Uploading photo ${i + 1} of ${picked.length}…`;
         try {
           const { blob, mime } = await prepare(picked[i].file);
-          await api('staff:upload', { tab: list, mime, data: await toBase64(blob), originalName: picked[i].file.name, index: picked.length > 1 ? i + 1 : 0 });
+          await api('staff:upload', { tab: list, mime, data: await toBase64(blob), originalName: picked[i].file.name, index: picked.length > 1 ? i + 1 : 0, group });
           okCount++;
         } catch (err) { errors.push(`Photo ${i + 1}: ${err.message}`); }
       }
@@ -728,7 +796,7 @@
 
     /* ---------- export ---------- */
     $('#csvBtn').onclick = () => {
-      const cols = ['id', 'status', 'category', 'company', 'contact_name', 'designation', 'phone', 'phone2', 'email', 'email2', 'website', 'address', 'city', 'notes'];
+      const cols = ['id', 'status', 'category', 'company', 'contact_name', 'designation', 'phone', 'phone2', 'phone3', 'email', 'email2', 'website', 'address', 'city', 'notes'];
       const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
       const csv = [cols.join(',')].concat(filtered().map(r => cols.map(c => q(r[c])).join(','))).join('\r\n');
       const a = document.createElement('a');
