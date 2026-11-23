@@ -243,6 +243,7 @@
           <label class="field">Phone<input name="phone" inputmode="tel"></label>
           <label class="field">Phone 2<input name="phone2" inputmode="tel"></label>
           <label class="field">Email<input name="email" type="email" autocapitalize="none"></label>
+          <label class="field">Email 2<input name="email2" type="email" autocapitalize="none"></label>
           <label class="field">Website<input name="website" autocapitalize="none"></label>
           <label class="field">City<input name="city"></label>
           <label class="field">Status<select name="status"><option>To check</option><option>Verified</option><option>Inactive</option></select></label>
@@ -470,7 +471,7 @@
     function filtered() {
       const q = $('#q').value.trim().toLowerCase(), st = $('#fStatus').value, cat = $('#fCat').value;
       return (data[tab] || []).filter(r => (!st || (r.status || 'To check') === st) && (!cat || r.category === cat) &&
-        (!q || ['id', 'company', 'contact_name', 'designation', 'phone', 'phone2', 'email', 'website', 'city', 'address', 'notes']
+        (!q || ['id', 'company', 'contact_name', 'designation', 'phone', 'phone2', 'email', 'email2', 'website', 'city', 'address', 'notes']
           .some(k => String(r[k] || '').toLowerCase().indexOf(q) >= 0)));
     }
     function render() {
@@ -485,14 +486,14 @@
           <td><b>${esc(r.company || '—')}</b><span class="sub">${esc([r.category, r.id].filter(Boolean).join(' · '))}</span></td>
           <td>${esc(r.contact_name || '—')}<span class="sub">${esc(r.designation)}</span></td>
           <td>${esc(r.phone)}<span class="sub">${esc(r.phone2)}</span></td>
-          <td class="hide-sm">${esc(r.email)}</td><td>${esc(r.city)}</td><td>${pill(r.status)}</td></tr>`).join('') + '</tbody></table>';
+          <td class="hide-sm">${esc(r.email)}<span class="sub">${esc(r.email2)}</span></td><td>${esc(r.city)}</td><td>${pill(r.status)}</td></tr>`).join('') + '</tbody></table>';
     }
     ['#q', '#fStatus', '#fCat'].forEach(s => $(s).addEventListener('input', render));
     $('#listWrap').addEventListener('click', e => { const tr = e.target.closest('tr[data-id]'); if (tr) openContact(data[tab].find(r => r.id === tr.dataset.id)); });
 
     /* ---------- contact editor ---------- */
     const dlg = $('#cDlg'), cf = $('#cForm');
-    const FIELDS = ['company', 'category', 'contact_name', 'designation', 'phone', 'phone2', 'email', 'website', 'city', 'status', 'address', 'notes'];
+    const FIELDS = ['company', 'category', 'contact_name', 'designation', 'phone', 'phone2', 'email', 'email2', 'website', 'city', 'status', 'address', 'notes'];
     function openContact(r) {
       editing = r || null; const other = tab === 'buyers' ? 'Sellers' : 'Buyers';
       cf.category.innerHTML = '<option value=""></option>' + (meta ? meta.categories[tab] : []).map(c => `<option>${esc(c)}</option>`).join('');
@@ -532,6 +533,7 @@
         ['Contact', esc(r.contact_name)], ['Designation', esc(r.designation)],
         ['Phone', r.phone ? link('tel:' + tel(r.phone), r.phone) : ''], ['Phone 2', r.phone2 ? link('tel:' + tel(r.phone2), r.phone2) : ''],
         ['Email', r.email ? link('mailto:' + r.email, r.email) : ''],
+        ['Email 2', r.email2 ? link('mailto:' + r.email2, r.email2) : ''],
         ['Website', r.website ? link(/^https?:/.test(r.website) ? r.website : 'https://' + r.website, r.website, true) : ''],
         ['Address', esc(r.address)], ['City', esc(r.city)], ['Notes', esc(r.notes)],
       ];
@@ -726,7 +728,7 @@
 
     /* ---------- export ---------- */
     $('#csvBtn').onclick = () => {
-      const cols = ['id', 'status', 'category', 'company', 'contact_name', 'designation', 'phone', 'phone2', 'email', 'website', 'address', 'city', 'notes'];
+      const cols = ['id', 'status', 'category', 'company', 'contact_name', 'designation', 'phone', 'phone2', 'email', 'email2', 'website', 'address', 'city', 'notes'];
       const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
       const csv = [cols.join(',')].concat(filtered().map(r => cols.map(c => q(r[c])).join(','))).join('\r\n');
       const a = document.createElement('a');
