@@ -78,7 +78,9 @@
     .dlg-body{padding:18px 20px;display:grid;gap:14px}
     .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     .card-photo{background:#f3f0e8;border-radius:6px;min-height:80px;display:grid;place-items:center;overflow:hidden;font-size:13px;color:var(--muted)}
-    .card-photo img{max-width:100%;max-height:340px;display:block}
+    .card-photo{gap:6px;padding:6px}
+    .card-photo img{max-width:100%;max-height:340px;display:block;border-radius:4px}
+    .link-like{border:0;background:none;color:var(--green);font-weight:700;font-size:13px;text-decoration:underline;cursor:pointer;padding:4px}
     .quick{display:flex;gap:8px;flex-wrap:wrap}
     .quick a{font-size:13px;font-weight:700;text-decoration:none;padding:6px 10px;border-radius:4px;background:var(--cream);border:1px solid var(--line)}
     .dlg-foot{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;padding:14px 20px;border-top:1px solid var(--line);position:sticky;bottom:0;background:#fff}
@@ -431,10 +433,33 @@
       quick(r);
       const ph = $('#cPhoto');
       ph.hidden = !(r && r.card_file_id); ph.innerHTML = 'Loading card photo…';
-      if (r && r.card_file_id) api('staff:card', { fileId: r.card_file_id })
-        .then(j => { if (editing === r) ph.innerHTML = `<img src="${j.dataUrl}" alt="Visiting card">`; })
+      if (r && r.card_file_id) cardPhoto(r.card_file_id)
+        .then(url => { if (editing === r) showCard(ph, url, r.card_box); })
         .catch(err => { ph.textContent = 'Card photo not available: ' + err.message; });
       dlg.showModal();
+    }
+    // Card photos are cached per file: a group photo is fetched once and cropped for each of its cards.
+    const photoCache = {};
+    function cardPhoto(fileId) {
+      return photoCache[fileId] || (photoCache[fileId] = api('staff:card', { fileId }).then(j => j.dataUrl)
+        .catch(err => { delete photoCache[fileId]; throw err; }));
+    }
+    function showCard(ph, url, box) {
+      const b = String(box || '').split(',').map(Number);
+      if (b.length !== 4 || b.some(isNaN)) { ph.innerHTML = `<img src="${url}" alt="Visiting card">`; return; }
+      const img = new Image();
+      img.onload = () => {
+        // box = [ymin, xmin, ymax, xmax] on a 0–1000 scale, with a small margin around the card.
+        const pad = 12, W = img.naturalWidth, H = img.naturalHeight;
+        const y0 = Math.max(0, b[0] - pad) / 1000 * H, x0 = Math.max(0, b[1] - pad) / 1000 * W;
+        const y1 = Math.min(1000, b[2] + pad) / 1000 * H, x1 = Math.min(1000, b[3] + pad) / 1000 * W;
+        const c = document.createElement('canvas'); c.width = Math.round(x1 - x0); c.height = Math.round(y1 - y0);
+        c.getContext('2d').drawImage(img, x0, y0, x1 - x0, y1 - y0, 0, 0, c.width, c.height);
+        ph.innerHTML = `<img src="${c.toDataURL('image/jpeg', 0.92)}" alt="Visiting card">` +
+          `<button type="button" class="link-like" data-whole>Show the whole photo</button>`;
+        ph.querySelector('[data-whole]').onclick = () => { ph.innerHTML = `<img src="${url}" alt="Group photo of visiting cards">`; };
+      };
+      img.src = url;
     }
     function quick(r) {
       const tel = p => String(p || '').replace(/[^\d+]/g, ''), wa = p => { let d = String(p || '').replace(/\D/g, ''); if (d.length === 10) d = '91' + d; return d; };
@@ -472,19 +497,21 @@
     /* ---------- scan visiting cards ---------- */
     $('#scanBtn').onclick = async () => {
       const btn = $('#scanBtn'), n = $('#scanNotice'); busy(btn, true); n.hidden = false;
-      const total = { processed: 0, buyers: 0, sellers: 0, toCheck: 0, failed: 0 };
+      const total = { processed: 0, cards: 0, buyers: 0, sellers: 0, toCheck: 0, failed: 0 };
       try {
         for (let round = 0; round < 20; round++) {
-          n.textContent = round ? `Scanning… ${total.processed} card(s) read so far.` : 'Scanning the visiting cards folder… this can take a minute.';
+          n.textContent = round ? `Scanning… ${total.processed} photo(s), ${total.cards} card(s) read so far.`
+                                : 'Scanning the visiting cards folder… a photo with many cards can take a minute.';
           const j = await api('staff:scan');
           Object.keys(total).forEach(k => total[k] += j[k] || 0);
           if (!j.remaining) break;
         }
         n.innerHTML = total.processed
-          ? `<b>${total.processed} new card(s) scanned:</b> ${total.buyers} buyer(s), ${total.sellers} seller(s)` +
+          ? `<b>${total.processed} photo(s) scanned, ${total.cards} card(s) found:</b> ${total.buyers} buyer(s), ${total.sellers} seller(s)` +
             (total.toCheck ? ` · <b>${total.toCheck} marked “To check”</b> – please compare them with the card photo` : '') +
-            (total.failed ? ` · ${total.failed} could not be read (see the CardScans tab)` : '') + '.'
-          : 'No new visiting cards found. Upload photos to Google Drive › ToolBox › visiting cards, then scan again.';
+            (total.failed ? ` · ${total.failed} photo(s) could not be read and will be retried on the next scan (see the CardScans tab)` : '') + '.'
+          : (total.failed ? `${total.failed} photo(s) could not be read; they will be retried on the next scan (details in the CardScans tab).`
+                          : 'No new visiting cards found. Upload photos to Google Drive › ToolBox › visiting cards, then scan again.');
         data = { buyers: null, sellers: null }; await load(tab); load(tab === 'buyers' ? 'sellers' : 'buyers', true);
       } catch (err) { n.textContent = err.message; }
       busy(btn, false);
