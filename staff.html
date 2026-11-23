@@ -98,6 +98,19 @@
     .eye:hover{color:var(--green);background:var(--cream)}
     .eye svg{width:22px;height:22px}
     .eye .off{display:none}.eye[aria-pressed=true] .on{display:none}.eye[aria-pressed=true] .off{display:block}
+    .seg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+    .seg label{cursor:pointer}
+    .seg input{position:absolute;opacity:0}
+    .seg span{display:block;border:1px solid #dcd7cb;border-radius:6px;padding:10px 12px;background:#fff;font-size:15px;font-weight:700;letter-spacing:0;text-transform:none;color:var(--green)}
+    .seg small{display:block;font-weight:400;font-size:12px;color:var(--muted)}
+    .seg input:checked+span{border-color:var(--green);box-shadow:inset 0 0 0 1px var(--green);background:var(--ok-bg)}
+    .seg input:focus-visible+span{outline:2px solid var(--rust);outline-offset:2px}
+    .pick{display:flex;gap:10px;flex-wrap:wrap}.pick .btn{flex:1 1 160px}
+    .thumbs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+    .thumbs-grid figure{margin:0;position:relative;border-radius:4px;overflow:hidden;background:#f3f0e8;aspect-ratio:4/3}
+    .thumbs-grid img{width:100%;height:100%;object-fit:cover;display:block}
+    .thumbs-grid button{position:absolute;top:4px;right:4px;width:28px;height:28px;border-radius:50%;border:0;background:#000a;color:#fff;cursor:pointer;font-size:16px;line-height:1}
+    .thumbs-grid figcaption{position:absolute;left:0;right:0;bottom:0;background:#000a;color:#fff;font-size:11px;padding:2px 6px}
     .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--green-deep);color:#fff;padding:12px 18px;border-radius:6px;font-size:14px;z-index:50;box-shadow:0 8px 24px #0004;max-width:calc(100% - 32px)}
 
     @media(max-width:760px){
@@ -174,6 +187,7 @@
           <select id="fStatus" aria-label="Status"><option value="">All statuses</option><option>To check</option><option>Verified</option><option>Inactive</option></select>
           <select id="fCat" aria-label="Category"><option value="">All categories</option></select>
           <button class="btn rust" id="addBtn" type="button">+ ADD</button>
+          <button class="btn rust" id="uploadBtn" type="button">ADD CARD PHOTOS</button>
           <button class="btn" id="scanBtn" type="button">SCAN VISITING CARDS</button>
           <button class="btn ghost" id="csvBtn" type="button">EXPORT CSV</button>
         </div>
@@ -224,6 +238,32 @@
       <div class="dlg-foot">
         <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn ghost" type="button" id="moveBtn">Move to Sellers</button><button class="btn danger" type="button" id="delBtn" hidden>Delete</button></div>
         <div class="right"><button class="btn ghost" type="button" data-close>Cancel</button><button class="btn" type="submit" id="cSave">SAVE</button></div>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Upload card photos -->
+  <dialog id="upDlg" aria-labelledby="upTitle">
+    <form method="dialog" id="upForm">
+      <div class="dlg-head"><h3 id="upTitle">Add visiting card photos</h3><button class="x" type="button" data-close aria-label="Close">×</button></div>
+      <div class="dlg-body">
+        <div class="field">These cards are
+          <div class="seg" role="radiogroup" aria-label="List">
+            <label><input type="radio" name="list" value="buyers" checked><span>Buyers<small>Hotels &amp; resorts</small></span></label>
+            <label><input type="radio" name="list" value="sellers"><span>Sellers<small>Travel agents &amp; tour operators</small></span></label>
+          </div>
+        </div>
+        <div class="pick">
+          <label class="btn ghost"><input type="file" id="upCamera" accept="image/*" capture="environment" hidden>TAKE A PHOTO</label>
+          <label class="btn ghost"><input type="file" id="upFiles" accept="image/*" multiple hidden>CHOOSE PHOTOS</label>
+        </div>
+        <p class="meta">One card or many per photo (up to about 24). Lay the cards flat in good light, without glare. You can add several photos.</p>
+        <div class="thumbs-grid" id="upThumbs"></div>
+        <p class="msg" id="upMsg" role="status"></p>
+      </div>
+      <div class="dlg-foot">
+        <span class="meta" id="upCount">No photos yet</span>
+        <div class="right"><button class="btn ghost" type="button" data-close>Cancel</button><button class="btn" type="submit" id="upGo" disabled>UPLOAD &amp; SCAN</button></div>
       </div>
     </form>
   </dialog>
@@ -495,7 +535,8 @@
     };
 
     /* ---------- scan visiting cards ---------- */
-    $('#scanBtn').onclick = async () => {
+    $('#scanBtn').onclick = () => runScan();
+    async function runScan(prefix) {
       const btn = $('#scanBtn'), n = $('#scanNotice'); busy(btn, true); n.hidden = false;
       const total = { processed: 0, cards: 0, buyers: 0, sellers: 0, toCheck: 0, failed: 0 };
       try {
@@ -506,16 +547,67 @@
           Object.keys(total).forEach(k => total[k] += j[k] || 0);
           if (!j.remaining) break;
         }
-        n.innerHTML = total.processed
+        n.innerHTML = (prefix || '') + (total.processed
           ? `<b>${total.processed} photo(s) scanned, ${total.cards} card(s) found:</b> ${total.buyers} buyer(s), ${total.sellers} seller(s)` +
             (total.toCheck ? ` · <b>${total.toCheck} marked “To check”</b> – please compare them with the card photo` : '') +
             (total.failed ? ` · ${total.failed} photo(s) could not be read and will be retried on the next scan (see the CardScans tab)` : '') + '.'
           : (total.failed ? `${total.failed} photo(s) could not be read; they will be retried on the next scan (details in the CardScans tab).`
-                          : 'No new visiting cards found. Upload photos to Google Drive › ToolBox › visiting cards, then scan again.');
+                          : 'No new visiting cards found. Use “Add card photos”, then scan again.'));
         data = { buyers: null, sellers: null }; await load(tab); load(tab === 'buyers' ? 'sellers' : 'buyers', true);
       } catch (err) { n.textContent = err.message; }
       busy(btn, false);
+    }
+
+    /* ---------- add card photos (camera / gallery) ---------- */
+    const up = $('#upDlg'), upForm = $('#upForm'); let picked = [];
+    $('#uploadBtn').onclick = () => {
+      picked = []; upForm.reset(); upForm.list.value = tab === 'sellers' ? 'sellers' : 'buyers';
+      $('#upMsg').textContent = ''; drawPicked(); up.showModal();
     };
+    ['#upCamera', '#upFiles'].forEach(s => $(s).addEventListener('change', e => {
+      [...e.target.files].forEach(f => picked.push({ file: f, url: URL.createObjectURL(f) }));
+      e.target.value = ''; drawPicked();
+    }));
+    function drawPicked() {
+      $('#upThumbs').innerHTML = picked.map((p, i) => `<figure><img src="${p.url}" alt=""><button type="button" data-rm="${i}" aria-label="Remove photo">×</button>` +
+        `<figcaption>${Math.round(p.file.size / 1024)} KB</figcaption></figure>`).join('');
+      $('#upCount').textContent = picked.length ? picked.length + ' photo(s) ready' : 'No photos yet';
+      $('#upGo').disabled = !picked.length;
+    }
+    $('#upThumbs').addEventListener('click', e => { const b = e.target.closest('[data-rm]'); if (b) { URL.revokeObjectURL(picked[+b.dataset.rm].url); picked.splice(+b.dataset.rm, 1); drawPicked(); } });
+
+    // Resize to at most 3000 px on the long side (keeps small print sharp, uploads stay quick).
+    async function prepare(file) {
+      try {
+        const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
+        const k = Math.min(1, 3000 / Math.max(bmp.width, bmp.height));
+        const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+        c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+        const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.9));
+        if (blob) return { blob, mime: 'image/jpeg' };
+      } catch (e) { /* browser could not decode it (e.g. HEIC): send the original */ }
+      return { blob: file, mime: file.type || 'image/jpeg' };
+    }
+    const toBase64 = blob => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(blob); });
+
+    upForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const list = upForm.list.value, go = $('#upGo'), m = $('#upMsg'); busy(go, true);
+      let okCount = 0; const errors = [];
+      for (let i = 0; i < picked.length; i++) {
+        m.className = 'msg'; m.textContent = `Uploading photo ${i + 1} of ${picked.length}…`;
+        try {
+          const { blob, mime } = await prepare(picked[i].file);
+          await api('staff:upload', { tab: list, mime, data: await toBase64(blob), originalName: picked[i].file.name, index: picked.length > 1 ? i + 1 : 0 });
+          okCount++;
+        } catch (err) { errors.push(`Photo ${i + 1}: ${err.message}`); }
+      }
+      busy(go, false);
+      if (!okCount) { m.className = 'msg err'; m.textContent = errors.join(' '); return; }
+      picked.forEach(p => URL.revokeObjectURL(p.url)); picked = []; up.close();
+      if (tab !== list) openTab(list);
+      runScan(`${okCount} photo(s) uploaded to ${list === 'buyers' ? 'Buyers' : 'Sellers'}${errors.length ? ` (${errors.length} failed: ${esc(errors.join(' '))})` : ''}. `);
+    });
 
     /* ---------- export ---------- */
     $('#csvBtn').onclick = () => {
