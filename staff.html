@@ -347,7 +347,7 @@
       }
       if (j.signedOut) { session = null; save(); show('login'); throw new Error(j.error); }
       if (j.mustChange) { session.user.mustChange = true; save(); show('pw'); throw new Error(j.error); }
-      if (!j.ok) throw new Error(j.error || 'Something went wrong.');
+      if (!j.ok) { const e = new Error(j.error || 'Something went wrong.'); e.data = j; throw e; }
       return j;
     }
     function toast(t) { const el = $('#toast'); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => el.hidden = true, 3500); }
@@ -552,7 +552,15 @@
         for (let round = 0; round < 20; round++) {
           n.textContent = round ? `Scanning… ${total.processed} photo(s), ${total.cards} card(s) read so far.`
                                 : 'Scanning the visiting cards folder… a photo with many cards can take a minute.';
-          const j = await api('staff:scan');
+          let j;
+          for (let wait = 0; ; wait++) {                 // another scan running: wait for it (up to ~3 minutes)
+            try { j = await api('staff:scan'); break; }
+            catch (err) {
+              if (!(err.data && err.data.running) || wait >= 9) throw err;
+              n.textContent = 'Another scan is still running – waiting for it to finish…';
+              await new Promise(r => setTimeout(r, 20000));
+            }
+          }
           Object.keys(total).forEach(k => total[k] += j[k] || 0);
           (j.errors || []).forEach(e => errors.push(e));
           skipped = j.skipped || skipped;
