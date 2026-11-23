@@ -134,6 +134,17 @@
     .pstrip .pt img{width:100%;height:100%;object-fit:cover;display:block}
     .pstrip .pt .rm{position:absolute;top:2px;right:2px;width:22px;height:22px;border-radius:50%;border:0;background:#000b;color:#fff;font-size:14px;line-height:1;cursor:pointer}
     .pstrip .add{flex:none;width:86px;height:60px;border:1px dashed #c9c2b1;border-radius:4px;background:#fff;color:var(--green);font-size:12px;font-weight:700;cursor:pointer;line-height:1.2}
+    .cutset{border:1px solid var(--line);border-radius:6px;padding:10px;display:grid;gap:8px;background:#fff}
+    .cuthead{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:13px;color:var(--muted)}
+    .cuthead b{color:var(--ink)}
+    .cuthead input{width:52px;padding:6px;border:1px solid #dcd7cb;border-radius:4px;font-size:15px}
+    .cuthead .btn{min-height:34px;padding:0 10px;font-size:12px}
+    .cuts{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+    .cuts figure{margin:0;position:relative;border-radius:4px;overflow:hidden;background:#f3f0e8;aspect-ratio:16/10;cursor:pointer;border:2px solid var(--green)}
+    .cuts figure img{width:100%;height:100%;object-fit:contain;display:block}
+    .cuts figure.off{opacity:.35;border-color:transparent}
+    .cuts figure span{position:absolute;top:4px;left:4px;background:var(--green);color:#fff;border-radius:3px;font-size:11px;font-weight:700;padding:1px 6px}
+    .cuts figure.off span{background:#666}
     .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--green-deep);color:#fff;padding:12px 18px;border-radius:6px;font-size:14px;z-index:50;box-shadow:0 8px 24px #0004;max-width:calc(100% - 32px)}
 
     @media(max-width:760px){
@@ -290,11 +301,17 @@
             <label><input type="radio" name="list" value="sellers"><span>Sellers<small>Travel agents &amp; tour operators</small></span></label>
           </div>
         </div>
+        <div class="field">Each photo shows
+          <div class="seg" role="radiogroup" aria-label="Cards per photo">
+            <label><input type="radio" name="mode" value="one" checked><span>One card<small>or the sides of one company</small></span></label>
+            <label><input type="radio" name="mode" value="many"><span>Several cards<small>cut apart automatically</small></span></label>
+          </div>
+        </div>
         <div class="pick">
           <label class="btn ghost"><input type="file" id="upCamera" accept="image/*" capture="environment" hidden>TAKE A PHOTO</label>
           <label class="btn ghost"><input type="file" id="upFiles" accept="image/*" multiple hidden>CHOOSE PHOTOS</label>
         </div>
-        <label class="switch"><input type="checkbox" id="upGroup"> <span>These photos are <b>ONE company</b> (front &amp; back, a folded card, or several cards of the same company)</span></label>
+        <label class="switch" id="upGroupWrap"><input type="checkbox" id="upGroup"> <span>These photos are <b>ONE company</b> (front &amp; back, a folded card, or several cards of the same company)</span></label>
         <p class="meta" id="upHint">One card per photo: fill the frame with the card, flat, in good light, without glare. You can add many photos at once.</p>
         <div class="thumbs-grid" id="upThumbs"></div>
         <p class="msg" id="upMsg" role="status"></p>
@@ -745,25 +762,189 @@
 
     /* ---------- add card photos (camera / gallery) ---------- */
     const up = $('#upDlg'), upForm = $('#upForm'); let picked = [];
+    const many = () => upForm.mode.value === 'many';
     $('#uploadBtn').onclick = () => {
       picked = []; upForm.reset(); upForm.list.value = tab === 'sellers' ? 'sellers' : 'buyers';
-      $('#upMsg').textContent = ''; drawPicked();
-      $('#upHint').textContent = meta && meta.reader && meta.reader !== 'Google OCR'
-        ? 'One card or many per photo (up to about 24). Lay the cards flat in good light, without glare. You can add several photos.'
-        : 'One card per photo: fill the frame with the card, flat, in good light, without glare. You can add many photos at once.';
+      $('#upMsg').textContent = ''; modeChanged();
       up.showModal();
     };
+    function modeChanged() {
+      $('#upGroupWrap').hidden = many();
+      $('#upHint').textContent = many()
+        ? 'Lay the cards flat on a DARK surface with small gaps between them, in good light. 6–12 cards per photo works best. You can check the cut-out cards before uploading.'
+        : (meta && meta.reader && meta.reader !== 'Google OCR'
+            ? 'One card or many per photo (up to about 24). Lay the cards flat in good light, without glare. You can add several photos.'
+            : 'One card per photo: fill the frame with the card, flat, in good light, without glare. You can add many photos at once.');
+      if (many()) picked.forEach(p => { if (!p.cuts) cutPhoto(p); });
+      drawPicked();
+    }
+    upForm.querySelectorAll('input[name=mode]').forEach(r => r.addEventListener('change', modeChanged));
     ['#upCamera', '#upFiles'].forEach(s => $(s).addEventListener('change', e => {
-      [...e.target.files].forEach(f => picked.push({ file: f, url: URL.createObjectURL(f) }));
+      [...e.target.files].forEach(f => { const p = { file: f, url: URL.createObjectURL(f) }; picked.push(p); if (many()) cutPhoto(p); });
       e.target.value = ''; drawPicked();
     }));
-    function drawPicked() {
-      $('#upThumbs').innerHTML = picked.map((p, i) => `<figure><img src="${p.url}" alt=""><button type="button" data-rm="${i}" aria-label="Remove photo">×</button>` +
-        `<figcaption>${Math.round(p.file.size / 1024)} KB</figcaption></figure>`).join('');
-      $('#upCount').textContent = picked.length ? picked.length + ' photo(s) ready' : 'No photos yet';
-      $('#upGo').disabled = !picked.length;
+
+    // --- "Several cards": find the cards in each photo and cut them out (all on this device) ---
+// Finds visiting cards (light rectangles) in a photo of several cards on a darker surface.
+// Returns boxes in original-image pixels, in reading order. Runs in the browser, no libraries.
+async function findCards(bitmap) {
+  const W0 = bitmap.width, H0 = bitmap.height;
+  const k = Math.min(1, 900 / Math.max(W0, H0));
+  const W = Math.round(W0 * k), H = Math.round(H0 * k);
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(bitmap, 0, 0, W, H);
+  const px = g.getImageData(0, 0, W, H).data;
+  // "Card-ness": bright and not very colourful (paper), against a darker or coloured surface.
+  const score = new Float32Array(W * H);
+  for (let i = 0, p = 0; i < W * H; i++, p += 4) {
+    const r = px[p], gg = px[p + 1], b = px[p + 2];
+    const mx = Math.max(r, gg, b), mn = Math.min(r, gg, b);
+    score[i] = mx - 0.6 * (mx - mn);            // brightness minus part of the saturation
+  }
+  // Otsu threshold on the score
+  const hist = new Array(256).fill(0);
+  for (let i = 0; i < score.length; i++) hist[Math.max(0, Math.min(255, score[i] | 0))]++;
+  let sum = 0; for (let t = 0; t < 256; t++) sum += t * hist[t];
+  let sumB = 0, wB = 0, best = 0, thr = 128;
+  for (let t = 0; t < 256; t++) {
+    wB += hist[t]; if (!wB) continue; const wF = score.length - wB; if (!wF) break;
+    sumB += t * hist[t]; const mB = sumB / wB, mF = (sum - sumB) / wF;
+    const v = wB * wF * (mB - mF) * (mB - mF); if (v > best) { best = v; thr = t; }
+  }
+  let mask = new Uint8Array(W * H);
+  for (let i = 0; i < mask.length; i++) mask[i] = score[i] > thr ? 1 : 0;
+  // Erode a little so cards that almost touch become separate, then label connected areas.
+  const erode = (m, r) => {
+    const out = new Uint8Array(m.length);
+    for (let y = r; y < H - r; y++) for (let x = r; x < W - r; x++) {
+      let ok = 1;
+      for (let d = -r; d <= r && ok; d++) if (!m[(y + d) * W + x] || !m[y * W + x + d]) ok = 0;
+      out[y * W + x] = ok;
     }
-    $('#upThumbs').addEventListener('click', e => { const b = e.target.closest('[data-rm]'); if (b) { URL.revokeObjectURL(picked[+b.dataset.rm].url); picked.splice(+b.dataset.rm, 1); drawPicked(); } });
+    return out;
+  };
+  // Try several separation strengths and keep the one that finds the most card-shaped areas.
+  const total = W * H;
+  const base = Math.max(2, Math.round(Math.min(W, H) / 220));
+  const label = new Int32Array(W * H), stack = new Int32Array(W * H);
+  const cardsAt = r => {
+    const m = erode(mask, r); label.fill(0);
+    const boxes = []; let n = 0;
+    for (let i = 0; i < m.length; i++) {
+      if (!m[i] || label[i]) continue;
+      n++; let sp = 0; stack[sp++] = i; label[i] = n;
+      let minx = W, miny = H, maxx = 0, maxy = 0, area = 0;
+      while (sp) {
+        const j = stack[--sp], x = j % W, y = (j / W) | 0; area++;
+        if (x < minx) minx = x; if (x > maxx) maxx = x; if (y < miny) miny = y; if (y > maxy) maxy = y;
+        if (x > 0 && m[j - 1] && !label[j - 1]) { label[j - 1] = n; stack[sp++] = j - 1; }
+        if (x < W - 1 && m[j + 1] && !label[j + 1]) { label[j + 1] = n; stack[sp++] = j + 1; }
+        if (y > 0 && m[j - W] && !label[j - W]) { label[j - W] = n; stack[sp++] = j - W; }
+        if (y < H - 1 && m[j + W] && !label[j + W]) { label[j + W] = n; stack[sp++] = j + W; }
+      }
+      boxes.push({ minx: minx - r, miny: miny - r, maxx: maxx + r, maxy: maxy + r, area });
+    }
+    return boxes.filter(b => {
+      const w = b.maxx - b.minx + 1, h = b.maxy - b.miny + 1, ar = Math.max(w, h) / Math.min(w, h);
+      return b.area > total * 0.004 && b.area < total * 0.6 && b.area / (w * h) > 0.45 && ar > 1.15 && ar < 2.6;
+    });
+  };
+  // Combine all strengths: a box that contains two or more smaller card boxes is two touching
+  // cards -> use the smaller ones; the same card found at several strengths -> keep the gentlest.
+  const cand = [];
+  [base, base * 2, base * 3, base * 4, base * 6].forEach((r, level) => cardsAt(r).forEach(b => cand.push(Object.assign(b, { level }))));
+  const areaOf = b => (b.maxx - b.minx) * (b.maxy - b.miny);
+  const inter = (a, b) => Math.max(0, Math.min(a.maxx, b.maxx) - Math.max(a.minx, b.minx)) * Math.max(0, Math.min(a.maxy, b.maxy) - Math.max(a.miny, b.miny));
+  const merged = cand.filter(a => cand.filter(b => b !== a && areaOf(b) < areaOf(a) * 0.75 && inter(a, b) > areaOf(b) * 0.8).length >= 2);
+  let cards = [];
+  cand.filter(a => merged.indexOf(a) < 0).sort((a, b) => a.level - b.level).forEach(a => {
+    if (!cards.some(b => inter(a, b) > 0.5 * Math.min(areaOf(a), areaOf(b)))) cards.push(a);
+  });
+  // Reading order: rows from the top, left to right within a row.
+  cards.sort((a, b) => a.miny - b.miny);
+  const rows = [];
+  cards.forEach(b => {
+    const cy = (b.miny + b.maxy) / 2, row = rows.find(rw => Math.abs(rw.cy - cy) < (b.maxy - b.miny) * 0.5);
+    if (row) row.items.push(b); else rows.push({ cy, items: [b] });
+  });
+  cards = [].concat(...rows.map(rw => rw.items.sort((a, b) => a.minx - b.minx)));
+  // Back to original pixels, with a small margin.
+  return cards.map(b => {
+    const m = 0.02 * Math.max(b.maxx - b.minx, b.maxy - b.miny);
+    const x0 = Math.max(0, (b.minx - m) / k), y0 = Math.max(0, (b.miny - m) / k);
+    const x1 = Math.min(W0, (b.maxx + m) / k), y1 = Math.min(H0, (b.maxy + m) / k);
+    return { x: Math.round(x0), y: Math.round(y0), w: Math.round(x1 - x0), h: Math.round(y1 - y0) };
+  });
+}
+
+    async function cutOut(bmp, b) {
+      const k = Math.min(1, 2000 / Math.max(b.w, b.h));
+      const c = document.createElement('canvas'); c.width = Math.round(b.w * k); c.height = Math.round(b.h * k);
+      c.getContext('2d').drawImage(bmp, b.x, b.y, b.w, b.h, 0, 0, c.width, c.height);
+      const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.92));
+      return { blob, url: URL.createObjectURL(blob), on: true };
+    }
+    async function cutPhoto(p, grid) {
+      p.busy = true; drawPicked();
+      try {
+        p.bmp = p.bmp || await createImageBitmap(p.file, { imageOrientation: 'from-image' });
+        if (!p.found) p.found = await findCards(p.bmp);
+        let boxes = p.found;
+        if (grid) {
+          // Even rows × columns over the area where cards were found (or the whole photo).
+          const src = p.found.length ? p.found : [{ x: 0, y: 0, w: p.bmp.width, h: p.bmp.height }];
+          const x0 = Math.min(...src.map(b => b.x)), y0 = Math.min(...src.map(b => b.y));
+          const x1 = Math.max(...src.map(b => b.x + b.w)), y1 = Math.max(...src.map(b => b.y + b.h));
+          const cw = (x1 - x0) / grid.cols, ch = (y1 - y0) / grid.rows;
+          boxes = [];
+          for (let r = 0; r < grid.rows; r++) for (let c = 0; c < grid.cols; c++) {
+            boxes.push({ x: Math.round(x0 + c * cw), y: Math.round(y0 + r * ch), w: Math.round(cw), h: Math.round(ch) });
+          }
+        }
+        (p.cuts || []).forEach(c => URL.revokeObjectURL(c.url));
+        p.cuts = []; for (const b of boxes) p.cuts.push(await cutOut(p.bmp, b));
+        p.grid = grid || null; p.error = p.cuts.length ? '' : 'No cards found. Use a darker background with small gaps, or “Split as a grid”.';
+      } catch (err) { p.cuts = []; p.error = 'This photo could not be opened here (' + err.message + '). Try a JPEG photo.'; }
+      p.busy = false; drawPicked();
+    }
+
+    function drawPicked() {
+      const go = $('#upGo');
+      if (!many()) {
+        $('#upThumbs').className = 'thumbs-grid';
+        $('#upThumbs').innerHTML = picked.map((p, i) => `<figure><img src="${p.url}" alt=""><button type="button" data-rm="${i}" aria-label="Remove photo">×</button>` +
+          `<figcaption>${Math.round(p.file.size / 1024)} KB</figcaption></figure>`).join('');
+        $('#upCount').textContent = picked.length ? picked.length + ' photo(s) ready' : 'No photos yet';
+        go.disabled = !picked.length;
+        return;
+      }
+      $('#upThumbs').className = '';
+      $('#upThumbs').innerHTML = picked.map((p, i) => `<div class="cutset">
+          <div class="cuthead"><b>Photo ${i + 1}</b>
+            <span>${p.busy ? 'Finding cards…' : p.error ? esc(p.error) : (p.cuts || []).length + ' card(s) found – tap a card to leave it out'}</span>
+            <span>Split as a grid: <input type="number" min="1" max="8" value="${p.grid ? p.grid.rows : ''}" placeholder="rows" data-rows="${i}" aria-label="Rows"> ×
+              <input type="number" min="1" max="8" value="${p.grid ? p.grid.cols : ''}" placeholder="cols" data-cols="${i}" aria-label="Columns">
+              <button type="button" class="btn ghost" data-grid="${i}">SPLIT</button>${p.grid ? ` <button type="button" class="btn ghost" data-auto="${i}">AUTO</button>` : ''}</span>
+            <button type="button" class="btn ghost" data-rm="${i}">REMOVE PHOTO</button></div>
+          <div class="cuts">${(p.cuts || []).map((c, k) => `<figure class="${c.on ? '' : 'off'}" data-cut="${i}:${k}"><img src="${c.url}" alt="Card ${k + 1}"><span>${k + 1}</span></figure>`).join('')}</div>
+        </div>`).join('');
+      const n = picked.reduce((t, p) => t + (p.cuts || []).filter(c => c.on).length, 0);
+      $('#upCount').textContent = picked.length ? n + ' card(s) selected from ' + picked.length + ' photo(s)' : 'No photos yet';
+      go.disabled = !n || picked.some(p => p.busy);
+    }
+    $('#upThumbs').addEventListener('click', e => {
+      const rm = e.target.closest('[data-rm]');
+      if (rm) { const p = picked[+rm.dataset.rm]; URL.revokeObjectURL(p.url); (p.cuts || []).forEach(c => URL.revokeObjectURL(c.url)); picked.splice(+rm.dataset.rm, 1); drawPicked(); return; }
+      const cut = e.target.closest('[data-cut]');
+      if (cut) { const [i, k] = cut.dataset.cut.split(':').map(Number); picked[i].cuts[k].on = !picked[i].cuts[k].on; drawPicked(); return; }
+      const g = e.target.closest('[data-grid]');
+      if (g) {
+        const i = +g.dataset.grid, rows = +$(`[data-rows="${i}"]`).value, cols = +$(`[data-cols="${i}"]`).value;
+        if (rows >= 1 && cols >= 1 && rows * cols <= 40) cutPhoto(picked[i], { rows, cols }); else toast('Enter rows and columns (up to 40 cards).');
+        return;
+      }
+      const a = e.target.closest('[data-auto]'); if (a) cutPhoto(picked[+a.dataset.auto]);
+    });
 
     // Resize to at most 3000 px on the long side (keeps small print sharp, uploads stay quick).
     async function prepare(file) {
@@ -782,21 +963,25 @@
     upForm.addEventListener('submit', async e => {
       e.preventDefault();
       const list = upForm.list.value, go = $('#upGo'), m = $('#upMsg'); busy(go, true);
-      const group = $('#upGroup').checked && picked.length > 1 ? Date.now().toString(36) + Math.random().toString(36).slice(2, 8) : '';
+      // What to upload: whole photos, or the selected cut-out cards.
+      const items = many()
+        ? [].concat(...picked.map((p, i) => (p.cuts || []).map((c, k) => ({ c, name: (p.file.name || 'photo') + ' card ' + (k + 1) })).filter(x => x.c.on)))
+        : picked.map(p => ({ p, name: p.file.name }));
+      const group = !many() && $('#upGroup').checked && picked.length > 1 ? Date.now().toString(36) + Math.random().toString(36).slice(2, 8) : '';
       let okCount = 0; const errors = [];
-      for (let i = 0; i < picked.length; i++) {
-        m.className = 'msg'; m.textContent = `Uploading photo ${i + 1} of ${picked.length}…`;
+      for (let i = 0; i < items.length; i++) {
+        m.className = 'msg'; m.textContent = `Uploading ${many() ? 'card' : 'photo'} ${i + 1} of ${items.length}…`;
         try {
-          const { blob, mime } = await prepare(picked[i].file);
-          await api('staff:upload', { tab: list, mime, data: await toBase64(blob), originalName: picked[i].file.name, index: picked.length > 1 ? i + 1 : 0, group });
+          const { blob, mime } = items[i].c ? { blob: items[i].c.blob, mime: 'image/jpeg' } : await prepare(items[i].p.file);
+          await api('staff:upload', { tab: list, mime, data: await toBase64(blob), originalName: items[i].name, index: items.length > 1 ? i + 1 : 0, group });
           okCount++;
-        } catch (err) { errors.push(`Photo ${i + 1}: ${err.message}`); }
+        } catch (err) { errors.push(`${many() ? 'Card' : 'Photo'} ${i + 1}: ${err.message}`); }
       }
       busy(go, false);
       if (!okCount) { m.className = 'msg err'; m.textContent = errors.join(' '); return; }
-      picked.forEach(p => URL.revokeObjectURL(p.url)); picked = []; up.close();
+      picked.forEach(p => { URL.revokeObjectURL(p.url); (p.cuts || []).forEach(c => URL.revokeObjectURL(c.url)); }); picked = []; up.close();
       if (tab !== list) openTab(list);
-      runScan(`${okCount} photo(s) uploaded to ${list === 'buyers' ? 'Buyers' : 'Sellers'}${errors.length ? ` (${errors.length} failed: ${esc(errors.join(' '))})` : ''}. `);
+      runScan(`${okCount} ${many() ? 'card' : 'photo'}(s) uploaded to ${list === 'buyers' ? 'Buyers' : 'Sellers'}${errors.length ? ` (${errors.length} failed: ${esc(errors.join(' '))})` : ''}. `);
     });
 
     /* ---------- export ---------- */
