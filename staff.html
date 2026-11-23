@@ -86,6 +86,16 @@
     .meta{font-size:12px;color:var(--muted)}
     .switch{display:flex;align-items:center;gap:10px;font-size:14px}
     .switch input{width:20px;height:20px;accent-color:var(--green)}
+    .vbox{border-top:1px solid var(--line);padding-top:12px;font-size:12px;color:var(--muted);display:grid;gap:3px}
+    .vline{max-width:1240px;margin:auto;padding:0 16px 4px;font-size:12px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap}
+    .vbox b,.vline b{color:var(--ink);font-weight:600}
+    .vwarn{color:var(--warn)!important}
+    .pw-wrap{position:relative;display:block}
+    .pw-wrap input{padding-right:50px!important}
+    .eye{position:absolute;top:50%;right:4px;transform:translateY(-50%);width:42px;height:42px;border:0;background:none;border-radius:4px;color:var(--muted);cursor:pointer;display:grid;place-items:center}
+    .eye:hover{color:var(--green);background:var(--cream)}
+    .eye svg{width:22px;height:22px}
+    .eye .off{display:none}.eye[aria-pressed=true] .on{display:none}.eye[aria-pressed=true] .off{display:block}
     .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--green-deep);color:#fff;padding:12px 18px;border-radius:6px;font-size:14px;z-index:50;box-shadow:0 8px 24px #0004;max-width:calc(100% - 32px)}
 
     @media(max-width:760px){
@@ -114,6 +124,7 @@
       <button class="btn" type="submit">SIGN IN</button>
       <p class="msg" id="loginMsg" role="status"></p>
       <p class="back"><a href="./">← Back to the HOM website</a></p>
+      <div class="vbox js-ver"></div>
     </form>
   </section>
 
@@ -142,6 +153,7 @@
           <button class="btn ghost" id="pwBtn" type="button">Password</button>
           <button class="btn ghost js-signout" type="button">Sign out</button></div>
       </div>
+      <div class="vline js-ver"></div>
       <nav class="tabs" aria-label="Sections">
         <button data-tab="buyers" class="on">Buyers <small id="nBuyers">–</small></button>
         <button data-tab="sellers">Sellers <small id="nSellers">–</small></button>
@@ -223,7 +235,7 @@
           <label class="field">Username<input name="username" autocapitalize="none" spellcheck="false" required pattern="[A-Za-z0-9._\-]{3,30}" title="3–30 letters, numbers, dot, dash or underscore"></label>
           <label class="field">Full name<input name="name"></label>
           <label class="field">Role<select name="role"><option>Staff</option><option>Admin</option></select></label>
-          <label class="field" id="uPwLabel">Starting password<input name="password" type="text" autocomplete="off" minlength="8"></label>
+          <label class="field" id="uPwLabel">Starting password<input name="password" type="password" autocomplete="new-password" minlength="8"></label>
         </div>
         <label class="switch"><input type="checkbox" name="active" checked> Active (can sign in)</label>
         <p class="meta" id="uHint">The user will be asked to choose their own password at first sign-in.</p>
@@ -239,6 +251,7 @@
   <div class="toast" id="toast" role="status" hidden></div>
 
   <script src="config.js"></script>
+  <script src="version.js"></script>
   <script>
   (function () {
     const API = (window.HOM_CONFIG || {}).API_URL;
@@ -252,6 +265,25 @@
     };
 
     try { session = JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch (e) {}
+
+    /* ---------- versions: website (this page) and server (Apps Script) ---------- */
+    const SITE_V = window.HOM_VERSION || {};
+    let SERVER_V = null, serverMsg = 'checking…';
+    function renderVersions() {
+      const site = `<span>Website: <b>${esc(SITE_V.updated || '?')}</b> (${esc(SITE_V.commit || '?')})</span>`;
+      const old = SERVER_V && !SERVER_V.staff;
+      const srv = SERVER_V
+        ? `<span class="${old ? 'vwarn' : ''}">Server: <b>${esc(SERVER_V.updated || SERVER_V.version || '?')}</b> (${esc(SERVER_V.commit || '?')})${old ? ' – older than the staff area' : ''}</span>`
+        : `<span class="vwarn">Server: ${esc(serverMsg)}</span>`;
+      $$('.js-ver').forEach(el => el.innerHTML = site + srv);
+    }
+    renderVersions();
+    if (API) fetch(API + '?action=ping').then(r => r.json()).then(j => {
+      // Servers from before the staff area have no "commit" field.
+      SERVER_V = { version: j.version, commit: j.commit || 'old', updated: j.updated, staff: !!j.commit };
+      renderVersions();
+    }).catch(() => { serverMsg = 'not reachable'; renderVersions(); });
+    else { serverMsg = 'not connected'; renderVersions(); }
     const save = () => { try { session ? sessionStorage.setItem(KEY, JSON.stringify(session)) : sessionStorage.removeItem(KEY); } catch (e) {} };
 
     async function api(type, body) {
@@ -259,7 +291,10 @@
       const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(Object.assign({ type, token: session && session.token }, body || {})) });
       let j; try { j = await r.json(); } catch (e) { throw new Error('The server did not answer. Please try again.'); }
-      if (j.error === 'Unknown request') throw new Error('The staff area is still being set up. Please try again later.');
+      if (j.error === 'Unknown request') {
+        if (j.server) { SERVER_V = Object.assign({ staff: true }, j.server); renderVersions(); }
+        throw new Error('The server is running an older version without the staff area (see "Server" below). Please try again in a few minutes.');
+      }
       if (j.signedOut) { session = null; save(); show('login'); throw new Error(j.error); }
       if (j.mustChange) { session.user.mustChange = true; save(); show('pw'); throw new Error(j.error); }
       if (!j.ok) throw new Error(j.error || 'Something went wrong.');
@@ -268,8 +303,31 @@
     function toast(t) { const el = $('#toast'); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => el.hidden = true, 3500); }
     function busy(btn, on) { if (btn) btn.disabled = on; }
 
+    /* ---------- show / hide password (eye) ---------- */
+    const EYE = '<svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>' +
+                '<svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.6 5.1A9.8 9.8 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-2.9 3.9M6.6 6.6A17.3 17.3 0 0 0 2 12s3.6 7 10 7a9.6 9.6 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2M3 3l18 18"/></svg>';
+    $$('input[type=password]').forEach(inp => {
+      const wrap = document.createElement('span'); wrap.className = 'pw-wrap';
+      inp.parentNode.insertBefore(wrap, inp); wrap.appendChild(inp);
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'eye'; btn.innerHTML = EYE;
+      btn.setAttribute('aria-label', 'Show password'); btn.setAttribute('aria-pressed', 'false');
+      btn.addEventListener('mousedown', e => e.preventDefault());   // keep the cursor in the box
+      btn.onclick = () => setVisible(inp, inp.type === 'password');
+      wrap.appendChild(btn);
+    });
+    function setVisible(inp, show) {
+      inp.type = show ? 'text' : 'password';
+      const btn = inp.parentNode.querySelector('.eye');
+      btn.setAttribute('aria-pressed', String(show));
+      btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    }
+    const hideAll = () => $$('.pw-wrap input').forEach(i => setVisible(i, false));
+    $$('form').forEach(f => f.addEventListener('reset', hideAll));
+
     /* ---------- views ---------- */
     function show(v) {
+      hideAll();
       $('#loginView').hidden = v !== 'login'; $('#pwView').hidden = v !== 'pw'; $('#appView').hidden = v !== 'app';
       if (v === 'login') setTimeout(() => $('#loginForm').username.focus(), 0);
       if (v === 'pw') {
@@ -462,7 +520,7 @@
     };
     const ud = $('#uDlg'), uf = $('#uForm'); let editingUser = null;
     function openUser(u) {
-      editingUser = u || null; uf.reset();
+      editingUser = u || null; uf.reset(); hideAll();
       uf.username.value = u ? u.username : ''; uf.username.readOnly = !!u;
       uf.name.value = u ? u.name : ''; uf.role.value = u ? u.role : 'Staff'; uf.active.checked = u ? u.active : true;
       uf.password.required = !u; $('#uPwLabel').firstChild.textContent = u ? 'Reset password (optional)' : 'Starting password';
