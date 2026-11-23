@@ -9,7 +9,7 @@
   <meta property="og:description" content="Your cozy home away from home in Trivandrum, Kerala. Comfort · Convenience · Connectivity.">
   <meta property="og:image" content="images/garden-porch.jpg">
   <meta name="theme-color" content="#024c23">
-  <meta name="hom-version" content="2026-11-20.1">
+  <meta name="hom-version" content="2026-11-23.1">
   <link rel="icon" type="image/png" href="images/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -43,6 +43,7 @@
     .brand img{height:52px;width:auto;object-fit:contain}
     nav.main{display:flex;gap:28px;align-items:center;font-size:13px;font-weight:600;color:#44534b}
     nav.main a:hover{color:var(--rust)}
+    nav.main .staff-link{color:var(--muted);border-left:1px solid var(--line);padding-left:22px}
     .menu{display:none;background:none;border:0;font-size:26px;color:var(--green);cursor:pointer;padding:6px;line-height:1}
     .mobile-nav{display:none;border-top:1px solid #eee;background:#fff}
     .mobile-nav a{display:block;padding:14px 22px;border-bottom:1px solid #f1f1f1;font-weight:600;color:#33443a}
@@ -246,13 +247,13 @@
     <div class="wrap nav">
       <a class="brand" href="#home" aria-label="HOM – Feel at Home, home"><img src="images/logo.png" alt="HOM – Feel at Home" width="88" height="52"></a>
       <nav class="main" aria-label="Main navigation">
-        <a href="#welcome">Welcome</a><a href="#units">Our Units</a><a href="#nearby">Location</a><a href="#partners">Hotels &amp; Resorts</a><a href="#contact">Contact</a>
+        <a href="#welcome">Welcome</a><a href="#units">Our Units</a><a href="#nearby">Location</a><a href="#partners">Hotels &amp; Resorts</a><a href="#contact">Contact</a><a href="staff.html" class="staff-link">Employee Login</a>
       </nav>
       <a class="btn" href="#contact">BOOK YOUR STAY</a>
       <button class="menu" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="mobileNav">☰</button>
     </div>
     <nav class="mobile-nav" id="mobileNav" aria-label="Mobile navigation">
-      <a href="#welcome">Welcome</a><a href="#units">Our Units</a><a href="#nearby">Location</a><a href="#partners">Hotels &amp; Resorts</a><a href="#contact">Contact</a>
+      <a href="#welcome">Welcome</a><a href="#units">Our Units</a><a href="#nearby">Location</a><a href="#partners">Hotels &amp; Resorts</a><a href="#contact">Contact</a><a href="staff.html">Employee Login</a>
     </nav>
   </header>
 
@@ -374,7 +375,7 @@
 
   <footer><div class="wrap"><div class="footer-row">
     <a class="footer-brand" href="#home"><img src="images/logo.png" alt="HOM – Feel at Home" width="75" height="44"></a>
-    <div class="footer-links"><a href="#units">Our Units</a><a href="#nearby">Location</a><a href="#partners">Hotels &amp; Resorts</a><a href="#contact">Contact</a></div>
+    <div class="footer-links"><a href="#units">Our Units</a><a href="#nearby">Location</a><a href="#partners">Hotels &amp; Resorts</a><a href="#contact">Contact</a><a href="staff.html">Employee Login</a></div>
     <p>A STAYO hospitality brand</p>
   </div><div class="fineprint">© <span id="year"></span> HOM · Feel at Home · Near Akkulam, Sreekariyam PO, Trivandrum 695017</div></div></footer>
 

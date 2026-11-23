@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employee Login | HOM – Feel at Home</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#024c23">
+  <link rel="icon" type="image/png" href="images/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
+  <style>
+    :root{--green:#024c23;--green2:#0d5e33;--green-deep:#013519;--rust:#c85b22;--rust2:#b04d18;--peach:#f3c9a9;
+      --cream:#faf6ee;--sand:#efe7d8;--ink:#1f2a23;--muted:#5f6b64;--line:#e6e1d5;--warn:#9a5b00;--warn-bg:#fff3dc;--ok-bg:#e5f2e9;--off-bg:#eeeeec;--err:#b3261e}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:"DM Sans",system-ui,sans-serif;color:var(--ink);background:var(--cream);line-height:1.5;-webkit-font-smoothing:antialiased}
+    a{color:var(--green)}
+    button,input,select,textarea{font:inherit;color:inherit}
+    h1,h2,h3{font-family:"Playfair Display",serif;font-weight:500;margin:0;color:var(--green);font-variant-numeric:lining-nums}
+    [hidden]{display:none!important}
+    :focus-visible{outline:2px solid var(--rust);outline-offset:2px}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:42px;padding:0 16px;border-radius:4px;border:1px solid var(--green);background:var(--green);color:#fff;font-weight:700;font-size:13px;letter-spacing:.02em;cursor:pointer;white-space:nowrap;text-decoration:none}
+    .btn:hover{background:var(--green2)}
+    .btn.rust{background:var(--rust);border-color:var(--rust)}.btn.rust:hover{background:var(--rust2)}
+    .btn.ghost{background:#fff;color:var(--green);border-color:var(--line)}.btn.ghost:hover{background:var(--cream)}
+    .btn.danger{background:#fff;color:var(--err);border-color:#e7c3c0}
+    .btn:disabled{opacity:.55;cursor:wait}
+    .field{display:grid;gap:5px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+    .field input,.field select,.field textarea{width:100%;padding:11px 12px;border:1px solid #dcd7cb;border-radius:4px;background:#fff;font-size:16px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--ink)}
+    .field textarea{min-height:80px;resize:vertical}
+    .msg{font-size:14px;margin:0;min-height:20px}.msg.err{color:var(--err)}.msg.ok{color:var(--green);font-weight:600}
+
+    /* Sign in */
+    .auth{min-height:100vh;display:grid;place-items:center;padding:24px 16px}
+    .auth-card{width:min(400px,100%);background:#fff;border:1px solid var(--line);border-radius:8px;padding:32px 28px;display:grid;gap:16px;box-shadow:0 10px 40px #0000000d}
+    .auth-card img{height:62px;width:auto;margin:0 auto 4px}
+    .auth-card h1{font-size:26px;text-align:center}
+    .auth-card p.sub{margin:-8px 0 4px;text-align:center;color:var(--muted);font-size:14px}
+    .auth-card .back{text-align:center;font-size:13px}
+
+    /* App shell */
+    header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+    .bar{max-width:1240px;margin:auto;padding:10px 16px;display:flex;align-items:center;gap:14px}
+    .bar img{height:40px;width:auto}
+    .bar .title{font-weight:700;color:var(--green);font-size:14px;border-left:1px solid var(--line);padding-left:14px}
+    .bar .me{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+    .bar .me b{color:var(--ink)}
+    .role{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--sand);color:var(--green)}
+    .tabs{max-width:1240px;margin:auto;padding:0 16px;display:flex;gap:4px;overflow-x:auto}
+    .tabs button{border:0;background:none;padding:12px 14px;font-weight:700;font-size:14px;color:var(--muted);border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
+    .tabs button.on{color:var(--green);border-bottom-color:var(--rust)}
+    .tabs small{display:inline-block;min-width:20px;padding:0 6px;margin-left:6px;border-radius:10px;background:var(--sand);font-size:11px;color:var(--green)}
+    main{max-width:1240px;margin:auto;padding:20px 16px 60px}
+    .intro{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+    .intro h2{font-size:28px}
+    .intro p{margin:4px 0 0;color:var(--muted);font-size:14px}
+    .tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+    .tools input[type=search]{flex:1 1 240px;min-width:0;padding:10px 12px;border:1px solid #dcd7cb;border-radius:4px;background:#fff;font-size:16px}
+    .tools select{padding:10px;border:1px solid #dcd7cb;border-radius:4px;background:#fff;font-size:15px}
+    .notice{background:#fff;border:1px solid var(--line);border-left:4px solid var(--rust);border-radius:4px;padding:12px 14px;margin-bottom:14px;font-size:14px}
+    .count{font-size:13px;color:var(--muted);margin:0 0 8px}
+
+    table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:6px;overflow:hidden;font-size:14px}
+    th{text-align:left;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:#fbf9f4;padding:10px 12px;border-bottom:1px solid var(--line)}
+    td{padding:11px 12px;border-bottom:1px solid #f0ece3;vertical-align:top}
+    tbody tr{cursor:pointer}tbody tr:hover{background:#fdfbf6}
+    td .sub{display:block;color:var(--muted);font-size:12px}
+    .pill{display:inline-block;padding:2px 9px;border-radius:10px;font-size:12px;font-weight:700;white-space:nowrap}
+    .pill.check{background:var(--warn-bg);color:var(--warn)}.pill.ok{background:var(--ok-bg);color:var(--green)}.pill.off{background:var(--off-bg);color:#666}
+    .empty{background:#fff;border:1px dashed #d8d2c4;border-radius:6px;padding:36px 20px;text-align:center;color:var(--muted)}
+
+    dialog{border:0;border-radius:8px;padding:0;width:min(760px,calc(100% - 20px));max-height:calc(100vh - 24px);box-shadow:0 20px 60px #0004}
+    dialog::backdrop{background:#0b1a12b3}
+    .dlg-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:1}
+    .dlg-head h3{font-size:22px}
+    .x{border:0;background:var(--cream);width:40px;height:40px;border-radius:50%;font-size:22px;cursor:pointer;color:var(--green);flex:none}
+    .dlg-body{padding:18px 20px;display:grid;gap:14px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .card-photo{background:#f3f0e8;border-radius:6px;min-height:80px;display:grid;place-items:center;overflow:hidden;font-size:13px;color:var(--muted)}
+    .card-photo img{max-width:100%;max-height:340px;display:block}
+    .quick{display:flex;gap:8px;flex-wrap:wrap}
+    .quick a{font-size:13px;font-weight:700;text-decoration:none;padding:6px 10px;border-radius:4px;background:var(--cream);border:1px solid var(--line)}
+    .dlg-foot{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;padding:14px 20px;border-top:1px solid var(--line);position:sticky;bottom:0;background:#fff}
+    .dlg-foot .right{display:flex;gap:10px;flex-wrap:wrap;margin-left:auto}
+    .meta{font-size:12px;color:var(--muted)}
+    .switch{display:flex;align-items:center;gap:10px;font-size:14px}
+    .switch input{width:20px;height:20px;accent-color:var(--green)}
+    .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--green-deep);color:#fff;padding:12px 18px;border-radius:6px;font-size:14px;z-index:50;box-shadow:0 8px 24px #0004;max-width:calc(100% - 32px)}
+
+    @media(max-width:760px){
+      .bar .title{display:none}.bar .me span.nm{display:none}
+      .grid2{grid-template-columns:1fr}
+      table.list thead{display:none}
+      table.list,table.list tbody,table.list tr,table.list td{display:block;width:100%}
+      table.list{border:0;background:none}
+      table.list tr{background:#fff;border:1px solid var(--line);border-radius:6px;margin-bottom:10px;padding:10px 12px}
+      table.list td{border:0;padding:3px 0}
+      table.list td.hide-sm{display:none}
+      .intro h2{font-size:24px}
+      .tools .btn{flex:1 1 auto}
+    }
+  </style>
+</head>
+<body>
+  <!-- Sign in -->
+  <section class="auth" id="loginView" hidden>
+    <form class="auth-card" id="loginForm" autocomplete="on">
+      <img src="images/logo.png" alt="HOM – Feel at Home" width="105" height="62">
+      <h1>Employee Login</h1>
+      <p class="sub">STAYO · HOM staff area</p>
+      <label class="field">Username<input name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
+      <label class="field">Password<input name="password" type="password" autocomplete="current-password" required></label>
+      <button class="btn" type="submit">SIGN IN</button>
+      <p class="msg" id="loginMsg" role="status"></p>
+      <p class="back"><a href="./">← Back to the HOM website</a></p>
+    </form>
+  </section>
+
+  <!-- Set a new password (first sign-in, or by choice) -->
+  <section class="auth" id="pwView" hidden>
+    <form class="auth-card" id="pwForm">
+      <img src="images/logo.png" alt="HOM – Feel at Home" width="105" height="62">
+      <h1 id="pwTitle">Set your password</h1>
+      <p class="sub" id="pwSub">Choose a new password to continue. At least 8 characters.</p>
+      <label class="field" id="pwCurrentWrap">Current password<input name="current" type="password" autocomplete="current-password"></label>
+      <label class="field">New password<input name="next" type="password" autocomplete="new-password" minlength="8" required></label>
+      <label class="field">Repeat new password<input name="again" type="password" autocomplete="new-password" minlength="8" required></label>
+      <button class="btn" type="submit">SAVE PASSWORD</button>
+      <p class="msg" id="pwMsg" role="status"></p>
+      <p class="back"><a href="#" id="pwCancel">Cancel</a> &nbsp; <a href="#" class="js-signout">Sign out</a></p>
+    </form>
+  </section>
+
+  <!-- Staff app -->
+  <div id="appView" hidden>
+    <header>
+      <div class="bar">
+        <a href="./" title="HOM website"><img src="images/logo.png" alt="HOM" width="68" height="40"></a>
+        <span class="title">STAYO Partners</span>
+        <div class="me"><span class="nm">Signed in as <b id="meName"></b></span><span class="role" id="meRole"></span>
+          <button class="btn ghost" id="pwBtn" type="button">Password</button>
+          <button class="btn ghost js-signout" type="button">Sign out</button></div>
+      </div>
+      <nav class="tabs" aria-label="Sections">
+        <button data-tab="buyers" class="on">Buyers <small id="nBuyers">–</small></button>
+        <button data-tab="sellers">Sellers <small id="nSellers">–</small></button>
+        <button data-tab="users" id="usersTab" hidden>Users</button>
+      </nav>
+    </header>
+
+    <main>
+      <!-- Buyers / Sellers -->
+      <section id="contactsView">
+        <div class="intro">
+          <div><h2 id="listTitle"></h2><p id="listSub"></p></div>
+        </div>
+        <div class="tools">
+          <input type="search" id="q" placeholder="Search name, company, phone, email, city…" aria-label="Search">
+          <select id="fStatus" aria-label="Status"><option value="">All statuses</option><option>To check</option><option>Verified</option><option>Inactive</option></select>
+          <select id="fCat" aria-label="Category"><option value="">All categories</option></select>
+          <button class="btn rust" id="addBtn" type="button">+ ADD</button>
+          <button class="btn" id="scanBtn" type="button">SCAN VISITING CARDS</button>
+          <button class="btn ghost" id="csvBtn" type="button">EXPORT CSV</button>
+        </div>
+        <div class="notice" id="scanNotice" hidden></div>
+        <p class="count" id="count"></p>
+        <div id="listWrap"></div>
+      </section>
+
+      <!-- Users (Admin only) -->
+      <section id="usersView" hidden>
+        <div class="intro">
+          <div><h2>Users</h2><p>Who can sign in to the staff area. New users must set their own password at first sign-in.</p></div>
+          <button class="btn rust" id="addUserBtn" type="button">+ ADD USER</button>
+        </div>
+        <div id="usersWrap"></div>
+        <div class="notice" style="margin-top:18px">
+          <label class="switch"><input type="checkbox" id="autoScan"> Scan new visiting cards automatically every hour</label>
+          <div class="meta" style="margin-top:6px">Card reader: <span id="reader">–</span>. Photos go in Google Drive › ToolBox › visiting cards. Put them in a <b>Buyers</b> or <b>Sellers</b> subfolder to skip the guessing.</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Contact editor -->
+  <dialog id="cDlg" aria-labelledby="cTitle">
+    <form method="dialog" id="cForm">
+      <div class="dlg-head"><div><div class="meta" id="cId"></div><h3 id="cTitle">Contact</h3></div><button class="x" type="button" data-close aria-label="Close">×</button></div>
+      <div class="dlg-body">
+        <div class="card-photo" id="cPhoto" hidden></div>
+        <div class="quick" id="cQuick"></div>
+        <div class="grid2">
+          <label class="field">Company / property<input name="company"></label>
+          <label class="field">Category<select name="category"></select></label>
+          <label class="field">Contact name<input name="contact_name"></label>
+          <label class="field">Designation<input name="designation"></label>
+          <label class="field">Phone<input name="phone" inputmode="tel"></label>
+          <label class="field">Phone 2<input name="phone2" inputmode="tel"></label>
+          <label class="field">Email<input name="email" type="email" autocapitalize="none"></label>
+          <label class="field">Website<input name="website" autocapitalize="none"></label>
+          <label class="field">City<input name="city"></label>
+          <label class="field">Status<select name="status"><option>To check</option><option>Verified</option><option>Inactive</option></select></label>
+        </div>
+        <label class="field">Address<textarea name="address" rows="2"></textarea></label>
+        <label class="field">Notes<textarea name="notes" rows="3"></textarea></label>
+        <p class="meta" id="cMeta"></p>
+        <p class="msg" id="cMsg" role="status"></p>
+      </div>
+      <div class="dlg-foot">
+        <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn ghost" type="button" id="moveBtn">Move to Sellers</button><button class="btn danger" type="button" id="delBtn" hidden>Delete</button></div>
+        <div class="right"><button class="btn ghost" type="button" data-close>Cancel</button><button class="btn" type="submit" id="cSave">SAVE</button></div>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- User editor -->
+  <dialog id="uDlg" aria-labelledby="uTitle">
+    <form method="dialog" id="uForm">
+      <div class="dlg-head"><h3 id="uTitle">User</h3><button class="x" type="button" data-close aria-label="Close">×</button></div>
+      <div class="dlg-body">
+        <div class="grid2">
+          <label class="field">Username<input name="username" autocapitalize="none" spellcheck="false" required pattern="[A-Za-z0-9._\-]{3,30}" title="3–30 letters, numbers, dot, dash or underscore"></label>
+          <label class="field">Full name<input name="name"></label>
+          <label class="field">Role<select name="role"><option>Staff</option><option>Admin</option></select></label>
+          <label class="field" id="uPwLabel">Starting password<input name="password" type="text" autocomplete="off" minlength="8"></label>
+        </div>
+        <label class="switch"><input type="checkbox" name="active" checked> Active (can sign in)</label>
+        <p class="meta" id="uHint">The user will be asked to choose their own password at first sign-in.</p>
+        <p class="msg" id="uMsg" role="status"></p>
+      </div>
+      <div class="dlg-foot">
+        <button class="btn danger" type="button" id="uDel" hidden>Delete user</button>
+        <div class="right"><button class="btn ghost" type="button" data-close>Cancel</button><button class="btn" type="submit">SAVE</button></div>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+
+  <script src="config.js"></script>
+  <script>
+  (function () {
+    const API = (window.HOM_CONFIG || {}).API_URL;
+    const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const KEY = 'hom_staff_session';
+    let session = null, tab = 'buyers', data = { buyers: null, sellers: null }, meta = null, editing = null, users = [];
+    const LABEL = {
+      buyers: ['Buyers', 'Hotels & resorts — we bring business to them.'],
+      sellers: ['Sellers', 'Travel agents & tour operators — they bring Trivandrum business to us.'],
+    };
+
+    try { session = JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch (e) {}
+    const save = () => { try { session ? sessionStorage.setItem(KEY, JSON.stringify(session)) : sessionStorage.removeItem(KEY); } catch (e) {} };
+
+    async function api(type, body) {
+      if (!API) throw new Error('The staff area is not connected yet.');
+      const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(Object.assign({ type, token: session && session.token }, body || {})) });
+      let j; try { j = await r.json(); } catch (e) { throw new Error('The server did not answer. Please try again.'); }
+      if (j.error === 'Unknown request') throw new Error('The staff area is still being set up. Please try again later.');
+      if (j.signedOut) { session = null; save(); show('login'); throw new Error(j.error); }
+      if (j.mustChange) { session.user.mustChange = true; save(); show('pw'); throw new Error(j.error); }
+      if (!j.ok) throw new Error(j.error || 'Something went wrong.');
+      return j;
+    }
+    function toast(t) { const el = $('#toast'); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => el.hidden = true, 3500); }
+    function busy(btn, on) { if (btn) btn.disabled = on; }
+
+    /* ---------- views ---------- */
+    function show(v) {
+      $('#loginView').hidden = v !== 'login'; $('#pwView').hidden = v !== 'pw'; $('#appView').hidden = v !== 'app';
+      if (v === 'login') setTimeout(() => $('#loginForm').username.focus(), 0);
+      if (v === 'pw') {
+        const forced = session && session.user.mustChange;
+        $('#pwTitle').textContent = forced ? 'Set your password' : 'Change password';
+        $('#pwSub').textContent = forced ? 'Welcome! Choose a new password to continue. At least 8 characters.' : 'At least 8 characters.';
+        $('#pwCurrentWrap').hidden = forced; $('#pwCancel').hidden = forced; $('#pwForm').reset(); $('#pwMsg').textContent = '';
+      }
+      if (v === 'app') {
+        $('#meName').textContent = session.user.name; $('#meRole').textContent = session.user.role;
+        $('#usersTab').hidden = session.user.role !== 'Admin'; $('#delBtn').hidden = session.user.role !== 'Admin';
+        openTab(tab);
+      }
+    }
+
+    $('#loginForm').addEventListener('submit', async e => {
+      e.preventDefault(); const f = e.target, btn = f.querySelector('button'), m = $('#loginMsg');
+      busy(btn, true); m.className = 'msg'; m.textContent = 'Signing in…';
+      try {
+        const j = await api('staff:login', { username: f.username.value, password: f.password.value });
+        session = { token: j.token, user: j.user }; save(); f.reset(); m.textContent = '';
+        show(j.user.mustChange ? 'pw' : 'app');
+      } catch (err) { m.className = 'msg err'; m.textContent = err.message; }
+      busy(btn, false);
+    });
+
+    $('#pwForm').addEventListener('submit', async e => {
+      e.preventDefault(); const f = e.target, m = $('#pwMsg'), btn = f.querySelector('button');
+      if (f.next.value !== f.again.value) { m.className = 'msg err'; m.textContent = 'The two new passwords do not match.'; return; }
+      busy(btn, true);
+      try { const j = await api('staff:changePassword', { current: f.current.value, next: f.next.value });
+        session.user = j.user; save(); toast('Password saved.'); show('app'); }
+      catch (err) { m.className = 'msg err'; m.textContent = err.message; }
+      busy(btn, false);
+    });
+    $('#pwBtn').onclick = () => show('pw');
+    $('#pwCancel').onclick = e => { e.preventDefault(); show('app'); };
+    $$('.js-signout').forEach(b => b.addEventListener('click', async e => {
+      e.preventDefault(); try { await api('staff:logout'); } catch (err) {}
+      session = null; data = { buyers: null, sellers: null }; save(); show('login');
+    }));
+
+    /* ---------- tabs ---------- */
+    $$('.tabs button').forEach(b => b.onclick = () => openTab(b.dataset.tab));
+    function openTab(t) {
+      tab = t; $$('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
+      $('#contactsView').hidden = t === 'users'; $('#usersView').hidden = t !== 'users';
+      if (t === 'users') return loadUsers();
+      $('#listTitle').textContent = LABEL[t][0]; $('#listSub').textContent = LABEL[t][1];
+      fillCategories(); render(); if (!data[t]) load(t);
+      if (!data[t === 'buyers' ? 'sellers' : 'buyers']) load(t === 'buyers' ? 'sellers' : 'buyers', true);
+    }
+    async function load(t, quiet) {
+      if (!quiet) $('#listWrap').innerHTML = '<div class="empty">Loading…</div>';
+      try { const j = await api('staff:list', { tab: t }); data[t] = j.rows; meta = j.meta; counts(); if (t === tab) { fillCategories(); render(); } }
+      catch (err) { if (!quiet) $('#listWrap').innerHTML = `<div class="empty">${esc(err.message)}</div>`; }
+    }
+    function counts() { ['buyers', 'sellers'].forEach(t => { if (data[t]) $('#n' + t[0].toUpperCase() + t.slice(1)).textContent = data[t].length; }); }
+    function fillCategories() {
+      const sel = $('#fCat'), v = sel.value, cats = meta ? meta.categories[tab] : [];
+      sel.innerHTML = '<option value="">All categories</option>' + cats.map(c => `<option>${esc(c)}</option>`).join('');
+      sel.value = cats.indexOf(v) >= 0 ? v : '';
+    }
+
+    /* ---------- list ---------- */
+    const pill = s => `<span class="pill ${s === 'Verified' ? 'ok' : s === 'Inactive' ? 'off' : 'check'}">${esc(s || 'To check')}</span>`;
+    function filtered() {
+      const q = $('#q').value.trim().toLowerCase(), st = $('#fStatus').value, cat = $('#fCat').value;
+      return (data[tab] || []).filter(r => (!st || (r.status || 'To check') === st) && (!cat || r.category === cat) &&
+        (!q || ['id', 'company', 'contact_name', 'designation', 'phone', 'phone2', 'email', 'website', 'city', 'address', 'notes']
+          .some(k => String(r[k] || '').toLowerCase().indexOf(q) >= 0)));
+    }
+    function render() {
+      if (!data[tab]) return;
+      const rows = filtered(), toCheck = data[tab].filter(r => (r.status || 'To check') === 'To check').length;
+      $('#count').textContent = `${rows.length} of ${data[tab].length}` + (toCheck ? ` · ${toCheck} to check` : '');
+      if (!data[tab].length) { $('#listWrap').innerHTML = `<div class="empty">No ${tab} yet. Add one, or scan the visiting cards.</div>`; return; }
+      if (!rows.length) { $('#listWrap').innerHTML = '<div class="empty">Nothing matches your search.</div>'; return; }
+      $('#listWrap').innerHTML = `<table class="list"><thead><tr><th>Company</th><th>Contact</th><th>Phone</th><th class="hide-sm">Email</th><th>City</th><th>Status</th></tr></thead><tbody>` +
+        rows.map(r => `<tr data-id="${esc(r.id)}">
+          <td><b>${esc(r.company || '—')}</b><span class="sub">${esc([r.category, r.id].filter(Boolean).join(' · '))}</span></td>
+          <td>${esc(r.contact_name || '—')}<span class="sub">${esc(r.designation)}</span></td>
+          <td>${esc(r.phone)}<span class="sub">${esc(r.phone2)}</span></td>
+          <td class="hide-sm">${esc(r.email)}</td><td>${esc(r.city)}</td><td>${pill(r.status)}</td></tr>`).join('') + '</tbody></table>';
+    }
+    ['#q', '#fStatus', '#fCat'].forEach(s => $(s).addEventListener('input', render));
+    $('#listWrap').addEventListener('click', e => { const tr = e.target.closest('tr[data-id]'); if (tr) openContact(data[tab].find(r => r.id === tr.dataset.id)); });
+
+    /* ---------- contact editor ---------- */
+    const dlg = $('#cDlg'), cf = $('#cForm');
+    const FIELDS = ['company', 'category', 'contact_name', 'designation', 'phone', 'phone2', 'email', 'website', 'city', 'status', 'address', 'notes'];
+    function openContact(r) {
+      editing = r || null; const other = tab === 'buyers' ? 'Sellers' : 'Buyers';
+      cf.category.innerHTML = '<option value=""></option>' + (meta ? meta.categories[tab] : []).map(c => `<option>${esc(c)}</option>`).join('');
+      FIELDS.forEach(k => cf[k].value = r ? (r[k] || '') : (k === 'status' ? 'Verified' : ''));
+      $('#cTitle').textContent = r ? (r.company || r.contact_name || 'Contact') : 'Add ' + (tab === 'buyers' ? 'buyer' : 'seller');
+      $('#cId').textContent = r ? r.id + ' · ' + LABEL[tab][0] : LABEL[tab][0];
+      $('#cMeta').textContent = r ? [r.source, r.added_by && 'added by ' + r.added_by, r.updated_by && 'last edited by ' + r.updated_by].filter(Boolean).join(' · ') : '';
+      $('#cMsg').textContent = ''; $('#moveBtn').hidden = !r; $('#moveBtn').textContent = 'Move to ' + other;
+      $('#delBtn').hidden = !r || session.user.role !== 'Admin';
+      quick(r);
+      const ph = $('#cPhoto');
+      ph.hidden = !(r && r.card_file_id); ph.innerHTML = 'Loading card photo…';
+      if (r && r.card_file_id) api('staff:card', { fileId: r.card_file_id })
+        .then(j => { if (editing === r) ph.innerHTML = `<img src="${j.dataUrl}" alt="Visiting card">`; })
+        .catch(err => { ph.textContent = 'Card photo not available: ' + err.message; });
+      dlg.showModal();
+    }
+    function quick(r) {
+      const tel = p => String(p || '').replace(/[^\d+]/g, ''), wa = p => { let d = String(p || '').replace(/\D/g, ''); if (d.length === 10) d = '91' + d; return d; };
+      const links = [];
+      if (r && r.phone) { links.push(`<a href="tel:${esc(tel(r.phone))}">Call</a>`); if (wa(r.phone).length >= 11) links.push(`<a href="https://wa.me/${wa(r.phone)}" target="_blank" rel="noopener">WhatsApp</a>`); }
+      if (r && r.email) links.push(`<a href="mailto:${esc(r.email)}">Email</a>`);
+      if (r && r.website) links.push(`<a href="${esc(/^https?:/.test(r.website) ? r.website : 'https://' + r.website)}" target="_blank" rel="noopener">Website</a>`);
+      $('#cQuick').innerHTML = links.join(''); $('#cQuick').hidden = !links.length;
+    }
+    $$('[data-close]').forEach(b => b.onclick = () => b.closest('dialog').close());
+    $('#addBtn').onclick = () => openContact(null);
+    cf.addEventListener('submit', async e => {
+      e.preventDefault(); const btn = $('#cSave'), m = $('#cMsg'); busy(btn, true);
+      const row = Object.fromEntries(FIELDS.map(k => [k, cf[k].value.trim()])); if (editing) row.id = editing.id;
+      try {
+        const j = await api('staff:save', { tab, row });
+        const list = data[tab], i = list.findIndex(x => x.id === j.row.id);
+        if (i >= 0) list[i] = j.row; else list.push(j.row);
+        counts(); render(); dlg.close(); toast('Saved ' + j.row.id + '.');
+      } catch (err) { m.className = 'msg err'; m.textContent = err.message; }
+      busy(btn, false);
+    });
+    $('#moveBtn').onclick = async () => {
+      const to = tab === 'buyers' ? 'sellers' : 'buyers';
+      if (!editing || !confirm(`Move ${editing.company || editing.id} to ${LABEL[to][0]}?`)) return;
+      try { await api('staff:move', { from: tab, to, id: editing.id }); dlg.close(); data[to] = null; await load(tab); load(to, true); toast('Moved to ' + LABEL[to][0] + '.'); }
+      catch (err) { $('#cMsg').className = 'msg err'; $('#cMsg').textContent = err.message; }
+    };
+    $('#delBtn').onclick = async () => {
+      if (!editing || !confirm(`Delete ${editing.company || editing.id}? This cannot be undone.`)) return;
+      try { await api('staff:delete', { tab, id: editing.id }); data[tab] = data[tab].filter(r => r.id !== editing.id); counts(); render(); dlg.close(); toast('Deleted.'); }
+      catch (err) { $('#cMsg').className = 'msg err'; $('#cMsg').textContent = err.message; }
+    };
+
+    /* ---------- scan visiting cards ---------- */
+    $('#scanBtn').onclick = async () => {
+      const btn = $('#scanBtn'), n = $('#scanNotice'); busy(btn, true); n.hidden = false;
+      const total = { processed: 0, buyers: 0, sellers: 0, toCheck: 0, failed: 0 };
+      try {
+        for (let round = 0; round < 20; round++) {
+          n.textContent = round ? `Scanning… ${total.processed} card(s) read so far.` : 'Scanning the visiting cards folder… this can take a minute.';
+          const j = await api('staff:scan');
+          Object.keys(total).forEach(k => total[k] += j[k] || 0);
+          if (!j.remaining) break;
+        }
+        n.innerHTML = total.processed
+          ? `<b>${total.processed} new card(s) scanned:</b> ${total.buyers} buyer(s), ${total.sellers} seller(s)` +
+            (total.toCheck ? ` · <b>${total.toCheck} marked “To check”</b> – please compare them with the card photo` : '') +
+            (total.failed ? ` · ${total.failed} could not be read (see the CardScans tab)` : '') + '.'
+          : 'No new visiting cards found. Upload photos to Google Drive › ToolBox › visiting cards, then scan again.';
+        data = { buyers: null, sellers: null }; await load(tab); load(tab === 'buyers' ? 'sellers' : 'buyers', true);
+      } catch (err) { n.textContent = err.message; }
+      busy(btn, false);
+    };
+
+    /* ---------- export ---------- */
+    $('#csvBtn').onclick = () => {
+      const cols = ['id', 'status', 'category', 'company', 'contact_name', 'designation', 'phone', 'phone2', 'email', 'website', 'address', 'city', 'notes'];
+      const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+      const csv = [cols.join(',')].concat(filtered().map(r => cols.map(c => q(r[c])).join(','))).join('\r\n');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv' }));
+      a.download = `stayo-${tab}-${new Date().toISOString().slice(0, 10)}.csv`; a.click(); URL.revokeObjectURL(a.href);
+    };
+
+    /* ---------- users (Admin) ---------- */
+    async function loadUsers() {
+      $('#usersWrap').innerHTML = '<div class="empty">Loading…</div>';
+      try { const j = await api('staff:users'); users = j.users; renderUsers(); settings(j.settings); }
+      catch (err) { $('#usersWrap').innerHTML = `<div class="empty">${esc(err.message)}</div>`; }
+    }
+    const when = iso => iso ? new Date(iso).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : 'Never';
+    function renderUsers() {
+      $('#usersWrap').innerHTML = `<table class="list"><thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Status</th><th>Last sign-in</th></tr></thead><tbody>` +
+        users.map(u => `<tr data-user="${esc(u.username)}"><td><b>${esc(u.username)}</b></td><td>${esc(u.name)}</td><td>${esc(u.role)}</td>
+          <td>${u.active ? (u.mustChange ? '<span class="pill check">Must set password</span>' : '<span class="pill ok">Active</span>') : '<span class="pill off">Disabled</span>'}</td>
+          <td>${esc(when(u.lastLogin))}</td></tr>`).join('') + '</tbody></table>';
+    }
+    function settings(s) { $('#autoScan').checked = s.cards_auto_scan === 'on'; $('#reader').textContent = s.reader; }
+    $('#autoScan').onchange = async e => {
+      try { const j = await api('staff:setting', { key: 'cards_auto_scan', value: e.target.checked ? 'on' : 'off' }); settings(j.settings); toast(e.target.checked ? 'Hourly scan switched on.' : 'Hourly scan switched off.'); }
+      catch (err) { e.target.checked = !e.target.checked; toast(err.message); }
+    };
+    const ud = $('#uDlg'), uf = $('#uForm'); let editingUser = null;
+    function openUser(u) {
+      editingUser = u || null; uf.reset();
+      uf.username.value = u ? u.username : ''; uf.username.readOnly = !!u;
+      uf.name.value = u ? u.name : ''; uf.role.value = u ? u.role : 'Staff'; uf.active.checked = u ? u.active : true;
+      uf.password.required = !u; $('#uPwLabel').firstChild.textContent = u ? 'Reset password (optional)' : 'Starting password';
+      $('#uHint').textContent = u ? 'Leave the password empty to keep it. A reset password must be changed at the next sign-in.'
+                                  : 'Give this password to the user. They will choose their own at first sign-in.';
+      $('#uTitle').textContent = u ? 'Edit ' + u.username : 'Add user';
+      $('#uDel').hidden = !u || u.username === session.user.username; $('#uMsg').textContent = '';
+      ud.showModal();
+    }
+    $('#addUserBtn').onclick = () => openUser(null);
+    $('#usersWrap').addEventListener('click', e => { const tr = e.target.closest('tr[data-user]'); if (tr) openUser(users.find(u => u.username === tr.dataset.user)); });
+    uf.addEventListener('submit', async e => {
+      e.preventDefault(); const m = $('#uMsg');
+      try {
+        const j = await api('staff:userSave', { user: { isNew: !editingUser, username: uf.username.value, name: uf.name.value.trim(),
+          role: uf.role.value, active: uf.active.checked, password: uf.password.value } });
+        users = j.users; renderUsers(); ud.close(); toast('User saved.');
+      } catch (err) { m.className = 'msg err'; m.textContent = err.message; }
+    });
+    $('#uDel').onclick = async () => {
+      if (!editingUser || !confirm(`Delete user ${editingUser.username}? They will no longer be able to sign in.`)) return;
+      try { const j = await api('staff:userDelete', { username: editingUser.username }); users = j.users; renderUsers(); ud.close(); toast('User deleted.'); }
+      catch (err) { $('#uMsg').className = 'msg err'; $('#uMsg').textContent = err.message; }
+    };
+
+    /* ---------- start ---------- */
+    if (!session) show('login');
+    else api('staff:me').then(j => { session.user = j.user; save(); show(j.user.mustChange ? 'pw' : 'app'); }).catch(() => {});
+  })();
+  </script>
+</body>
+</html>
