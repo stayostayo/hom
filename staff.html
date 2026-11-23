@@ -556,8 +556,8 @@
           for (let wait = 0; ; wait++) {                 // another scan running: wait for it (up to ~3 minutes)
             try { j = await api('staff:scan'); break; }
             catch (err) {
-              if (!(err.data && err.data.running) || wait >= 9) throw err;
-              n.textContent = 'Another scan is still running – waiting for it to finish…';
+              if (!(err.data && err.data.running) || wait >= 20) throw err;     // the marker expires within 6 min
+              n.textContent = `${err.message} Waiting for it to finish – this page will continue by itself…`;
               await new Promise(r => setTimeout(r, 20000));
             }
           }
