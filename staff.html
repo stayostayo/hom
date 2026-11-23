@@ -261,7 +261,8 @@
         <label class="field">Notes<textarea name="notes" rows="3"></textarea></label>
         <div class="reread" id="cReread" hidden>
           <button class="btn ghost" type="button" id="rereadBtn">READ THE CARD AGAIN</button>
-          <span class="meta">Fills only the empty fields – your corrections are kept.</span>
+          <button class="btn ghost" type="button" id="replaceBtn">REPLACE ALL FROM CARD</button>
+          <span class="meta">“Read again” fills only empty fields. “Replace all” takes every detail from the photos again.</span>
         </div>
         </div>
         <details class="rawbox" id="cRaw" hidden><summary>Text read from the card</summary><pre id="cRawText">Loading…</pre></details>
@@ -668,20 +669,24 @@
         $('#cRawText').textContent = j.text || '(no text was found on this card)'; box.dataset.loaded = box.dataset.id; }
       catch (err) { $('#cRawText').textContent = err.message; }
     });
-    $('#rereadBtn').onclick = async () => {
-      if (!editing) return; const btn = $('#rereadBtn'), m = $('#cMsg'); busy(btn, true);
+    $('#rereadBtn').onclick = () => rereadCard(false);
+    $('#replaceBtn').onclick = () => {
+      if (confirm('Replace company, name, title, phones, emails, website, address and city with what is read from the photos now? Status and notes are kept.')) rereadCard(true);
+    };
+    async function rereadCard(replaceAll) {
+      if (!editing) return; const btn = $(replaceAll ? '#replaceBtn' : '#rereadBtn'), m = $('#cMsg'); busy(btn, true);
       m.className = 'msg'; m.textContent = 'Reading the card again…';
       try {
-        const j = await api('staff:reread', { tab, id: editing.id });
+        const j = await api('staff:reread', { tab, id: editing.id, replaceAll });
         const list = data[tab], i = list.findIndex(x => x.id === j.row.id); if (i >= 0) list[i] = j.row;
-        FIELDS.forEach(k => { if (!cf[k].value.trim() && j.row[k]) cf[k].value = j.row[k]; });
+        FIELDS.forEach(k => { if ((replaceAll && k !== 'status' && k !== 'notes') || (!cf[k].value.trim() && j.row[k])) cf[k].value = j.row[k] || ''; });
         editing = j.row; $('#cRaw').dataset.loaded = ''; showPhotos(editing);
         m.className = 'msg ok'; m.textContent = j.filled.length ? 'Filled: ' + j.filled.join(', ').replace(/_/g, ' ') + '. Check them, then Save.'
                                                                 : 'Nothing new was found on the card.';
         render();
       } catch (err) { m.className = 'msg err'; m.textContent = err.message; }
       busy(btn, false);
-    };
+    }
     $('#moveBtn').onclick = async () => {
       const to = tab === 'buyers' ? 'sellers' : 'buyers';
       if (!editing || !confirm(`Move ${editing.company || editing.id} to ${LABEL[to][0]}?`)) return;
