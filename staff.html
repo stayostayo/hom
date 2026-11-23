@@ -116,6 +116,9 @@
     .thumbs-grid figcaption{position:absolute;left:0;right:0;bottom:0;background:#000a;color:#fff;font-size:11px;padding:2px 6px}
     .skipped{margin-top:10px}.skipped .btn{margin-top:8px}
     .scan-errors{margin:8px 0 0;padding-left:18px;color:var(--err);font-size:13px}
+    .reread{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .rawbox summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--green)}
+    .rawbox pre{white-space:pre-wrap;font-size:12px;background:#f7f5ef;border:1px solid var(--line);border-radius:4px;padding:10px;max-height:220px;overflow:auto;margin:8px 0 0}
     .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--green-deep);color:#fff;padding:12px 18px;border-radius:6px;font-size:14px;z-index:50;box-shadow:0 8px 24px #0004;max-width:calc(100% - 32px)}
 
     @media(max-width:760px){
@@ -235,6 +238,11 @@
         </div>
         <label class="field">Address<textarea name="address" rows="2"></textarea></label>
         <label class="field">Notes<textarea name="notes" rows="3"></textarea></label>
+        <div class="reread" id="cReread" hidden>
+          <button class="btn ghost" type="button" id="rereadBtn">READ THE CARD AGAIN</button>
+          <span class="meta">Fills only the empty fields – your corrections are kept.</span>
+        </div>
+        <details class="rawbox" id="cRaw" hidden><summary>Text read from the card</summary><pre id="cRawText">Loading…</pre></details>
         <p class="meta" id="cMeta"></p>
         <p class="msg" id="cMsg" role="status"></p>
       </div>
@@ -481,6 +489,8 @@
       quick(r);
       const ph = $('#cPhoto');
       ph.hidden = !(r && r.card_file_id); ph.innerHTML = 'Loading card photo…';
+      $('#cReread').hidden = $('#cRaw').hidden = !(r && r.card_file_id);
+      $('#cRaw').open = false; $('#cRawText').textContent = 'Loading…'; $('#cRaw').dataset.id = r ? r.id : '';
       if (r && r.card_file_id) cardPhoto(r.card_file_id)
         .then(url => { if (editing === r) showCard(ph, url, r.card_box); })
         .catch(err => { ph.textContent = 'Card photo not available: ' + err.message; });
@@ -530,6 +540,26 @@
       } catch (err) { m.className = 'msg err'; m.textContent = err.message; }
       busy(btn, false);
     });
+    $('#cRaw').addEventListener('toggle', async () => {
+      const box = $('#cRaw'); if (!box.open || box.dataset.loaded === box.dataset.id) return;
+      try { const j = await api('staff:rawText', { tab, id: box.dataset.id });
+        $('#cRawText').textContent = j.text || '(no text was found on this card)'; box.dataset.loaded = box.dataset.id; }
+      catch (err) { $('#cRawText').textContent = err.message; }
+    });
+    $('#rereadBtn').onclick = async () => {
+      if (!editing) return; const btn = $('#rereadBtn'), m = $('#cMsg'); busy(btn, true);
+      m.className = 'msg'; m.textContent = 'Reading the card again…';
+      try {
+        const j = await api('staff:reread', { tab, id: editing.id });
+        const list = data[tab], i = list.findIndex(x => x.id === j.row.id); if (i >= 0) list[i] = j.row;
+        FIELDS.forEach(k => { if (!cf[k].value.trim() && j.row[k]) cf[k].value = j.row[k]; });
+        editing = j.row; $('#cRaw').dataset.loaded = '';
+        m.className = 'msg ok'; m.textContent = j.filled.length ? 'Filled: ' + j.filled.join(', ').replace(/_/g, ' ') + '. Check them, then Save.'
+                                                                : 'Nothing new was found on the card.';
+        render();
+      } catch (err) { m.className = 'msg err'; m.textContent = err.message; }
+      busy(btn, false);
+    };
     $('#moveBtn').onclick = async () => {
       const to = tab === 'buyers' ? 'sellers' : 'buyers';
       if (!editing || !confirm(`Move ${editing.company || editing.id} to ${LABEL[to][0]}?`)) return;
