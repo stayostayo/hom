@@ -90,6 +90,18 @@
     .unit{background:#fff;border:1px solid var(--line);border-radius:6px;overflow:hidden;display:flex;flex-direction:column}
     .unit-photos{display:grid;grid-template-columns:2fr 1fr;grid-template-rows:150px 150px;gap:4px;cursor:pointer;position:relative}
     .unit-photos img:first-child{grid-row:span 2}
+    .unit{position:relative}
+    .play-badge{position:absolute;left:12px;top:12px;z-index:1;display:inline-flex;align-items:center;gap:6px;border:0;border-radius:999px;
+      background:#fffffff0;color:var(--green);font:inherit;font-size:13px;font-weight:700;padding:7px 14px 7px 8px;cursor:pointer;box-shadow:0 4px 14px #0003}
+    .play-badge svg{width:22px;height:22px;padding:4px;border-radius:50%;background:var(--rust);fill:#fff}
+    .play-badge:hover{background:#fff}
+    dialog.vdlg{width:min(980px,calc(100% - 24px));background:#000;overflow:hidden}
+    .vhead{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:var(--green);color:#fff}
+    .vhead h3{color:#fff;font-size:20px;margin:0}
+    .vclose{border:0;background:none;color:#fff;font-size:28px;line-height:1;cursor:pointer;padding:0 4px}
+    .vframe{position:relative;aspect-ratio:16/9;max-height:calc(100vh - 110px);width:100%}
+    .vframe iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+    @media(max-width:600px) and (orientation:portrait){.vframe{aspect-ratio:auto;height:70vh}}
     .unit-photos .count{position:absolute;right:12px;bottom:12px;background:#000000a6;color:#fff;font-size:12px;padding:5px 10px;border-radius:3px}
     .unit-body{padding:24px;display:flex;flex-direction:column;flex:1}
     .unit-title{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
@@ -382,6 +394,10 @@
 
   <a class="wa-float js-wa" href="#" target="_blank" rel="noopener" aria-label="Chat with HOM on WhatsApp"><svg><use href="#i-wa"/></svg></a>
 
+  <dialog id="videoDialog" class="vdlg" aria-labelledby="vTitle">
+    <div class="vhead"><h3 id="vTitle"></h3><button class="vclose" type="button" aria-label="Close">&times;</button></div>
+    <div class="vframe"><iframe id="vFrame" title="Video tour" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>
+  </dialog>
   <dialog id="stayDialog" aria-labelledby="dlgTitle">
     <div class="dlg-head"><div><div class="eyebrow" id="dlgPlace"></div><h3 id="dlgTitle"></h3></div><button class="dlg-close" id="dlgClose" aria-label="Close">×</button></div>
     <div class="viewer"><img id="dlgImg" alt=""><button class="nav-btn prev" id="dlgPrev" aria-label="Previous photo">‹</button><button class="nav-btn next" id="dlgNext" aria-label="Next photo">›</button><span class="pos" id="dlgPos"></span></div>
@@ -412,11 +428,11 @@
     let STAYS = [
       { id:'unit-1', name:'HOM01', type:'Entire 2-bedroom home', location:'Near Akkulam · Trivandrum', tag:'2 Bedrooms · AC',
         summary:'A well-appointed 2-bedroom home with air-conditioned rooms, attached bathrooms and a kitchen for light cooking.',
-        details:DETAILS, guests:'4 adults + 2 kids', bedrooms:2, priceNote:'Call or WhatsApp for rates', cover:'images/apt-bedroom.jpg',
+        details:DETAILS, guests:'4 adults + 2 kids', bedrooms:2, priceNote:'Call or WhatsApp for rates', cover:'images/apt-bedroom.jpg', video:'11DphCQ9ed_0D9xcsQxEa5xxWNBgL3Xbr',
         photos:['images/apt-bedroom.jpg','images/apt-living.jpg','images/apt-kitchen.jpg','images/apt-bath.jpg','images/apt-bedroom-2.jpg','images/apt-bedroom-desk.jpg','images/apt-living-dining.jpg','images/apt-dining.jpg','images/apt-balcony.jpg'], amenities:AMEN },
       { id:'unit-2', name:'HOM02', type:'Entire 2-bedroom home', location:'Near Akkulam · Trivandrum', tag:'2 Bedrooms · AC',
         summary:'An identical 2-bedroom home with the same comfort, features and space to relax.',
-        details:DETAILS, guests:'4 adults + 2 kids', bedrooms:2, priceNote:'Call or WhatsApp for rates', cover:'images/garden-porch.jpg',
+        details:DETAILS, guests:'4 adults + 2 kids', bedrooms:2, priceNote:'Call or WhatsApp for rates', cover:'images/garden-porch.jpg', video:'1xoMKwyJusPmml9pRwuIzoqBBxK54MwmH',
         photos:['images/garden-porch.jpg','images/garden-living.jpg','images/garden-living-2.jpg','images/garden-dining.jpg','images/garden-bedroom.jpg','images/garden-bedroom-2.jpg','images/garden-twin.jpg','images/garden-bath.jpg','images/garden-driveway.jpg'], amenities:AMEN }
     ];
     let NEARBY = [['NISH','800 m'],['Akkulam Tourist Village','1 km'],['KIMS Hospital','3 km'],['Lulu Mall','4 km'],['Technopark','5 km'],['Kochuveli Railway Station','5 km'],['RCC (Regional Cancer Centre)','5.5 km'],['Ananthapuri Hospital','7.5 km'],['Greenfield Stadium','8 km'],['Trivandrum International Airport','8 km'],['Napier Museum','9 km'],['Shanghumukham Beach','10 km'],['Sree Padmanabhaswamy Temple','10 km'],['Magic Planet','13 km'],['Kovalam Beach','22 km'],['Varkala Beach','35 km']].map(([place,distance])=>({place,distance}));
@@ -435,12 +451,13 @@
             ${p.slice(0,3).map((src,j)=> j ? `<img src="${esc(small(src))}" alt="" loading="lazy">` : `<img src="${esc(src)}"${srcset(src)} sizes="(max-width:960px) 66vw, 380px" alt="${esc(s.name)}" loading="lazy">`).join('')}
             ${p.length > 3 ? `<span class="count">+${p.length-3} photos</span>` : ''}
           </div>
+          ${s.video ? `<button class="play-badge" data-video="${i}" aria-label="Watch the video of ${esc(s.name)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>Video tour</button>` : ''}
           <div class="unit-body">
             <div class="unit-title"><h3>${esc(s.name)}</h3><span>${esc(s.type)}</span></div>
             <p>${esc(s.summary)}</p>
             <ul class="checks">${(s.amenities||[]).map(a=>`<li>${esc(a)}</li>`).join('')}</ul>
             <div class="unit-foot"><span class="meta"><b>${esc(s.guests)}</b> · ${esc(price(s))}</span>
-              <span class="unit-actions"><button class="link-btn" data-open="${i}">View photos</button><a class="btn rust" href="#contact" data-interest="${esc(s.name)}">BOOK ${esc(s.name.toUpperCase())}</a></span></div>
+              <span class="unit-actions">${s.video ? `<button class="link-btn" data-video="${i}">Watch video</button>` : ''}<button class="link-btn" data-open="${i}">View photos</button><a class="btn rust" href="#contact" data-interest="${esc(s.name)}">BOOK ${esc(s.name.toUpperCase())}</a></span></div>
           </div></article>`;
       }).join('');
     }
@@ -460,6 +477,23 @@
       $$('.js-wa').forEach(e => { e.hidden = !wa; if (wa) e.href = wa; });
     }
     function waLink(text){ const n = String(SETTINGS.whatsapp || '').replace(/\D/g,''); return n ? 'https://wa.me/' + n + '?text=' + encodeURIComponent(text) : ''; }
+
+    // Video tour: a Google Drive file id / link, or a YouTube link
+    function videoSrc(v){
+      v = String(v || '').trim();
+      const yt = v.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([\w-]{11})/);
+      if (yt) return 'https://www.youtube-nocookie.com/embed/' + yt[1] + '?autoplay=1&rel=0';
+      const d = v.match(/\/d\/([\w-]{20,})/) || v.match(/[?&]id=([\w-]{20,})/) || v.match(/^([\w-]{20,})$/);
+      return d ? 'https://drive.google.com/file/d/' + d[1] + '/preview' : '';
+    }
+    const vdlg = $('#videoDialog');
+    function openVideo(i){
+      const s = STAYS[i], src = videoSrc(s && s.video); if (!src) return;
+      $('#vTitle').textContent = s.name + ' · Video tour'; $('#vFrame').src = src; vdlg.showModal();
+    }
+    vdlg.addEventListener('close', () => { $('#vFrame').src = 'about:blank'; });
+    vdlg.querySelector('.vclose').onclick = () => vdlg.close();
+    vdlg.addEventListener('click', e => { if (e.target === vdlg) vdlg.close(); });
 
     // Photo gallery
     const dlg = $('#stayDialog'); let cur = null, idx = 0;
@@ -487,6 +521,7 @@
     });
     function chooseInterest(v){ const sel = $('#interest'); const m = [...sel.options].find(o => o.text === v || o.text.startsWith(v.split(' (')[0])); if (m) sel.value = m.text; else { sel.add(new Option(v)); sel.value = v; } }
     document.addEventListener('click', e => {
+      const v = e.target.closest('[data-video]'); if (v) { openVideo(+v.dataset.video); return; }
       const o = e.target.closest('[data-open]'); if (o) { openStay(+o.dataset.open); return; }
       const q = e.target.closest('[data-interest]'); if (q) { chooseInterest(q.dataset.interest); if (dlg.open) dlg.close(); }
     });
@@ -533,7 +568,8 @@
     if (CFG.API_URL) {
       fetch(CFG.API_URL + '?action=site').then(r => r.json()).then(j => {
         if (!j.ok) return;
-        if (j.stays && j.stays.length) { STAYS = j.stays.map(s => Object.assign({photos:[], amenities:[]}, s)); renderUnits(); }
+        if (j.stays && j.stays.length) { STAYS = j.stays.map(s => { const b = STAYS.find(x => x.name === s.name) || {};
+          return Object.assign({photos:[], amenities:[]}, s, { video: s.video || b.video || '' }); }); renderUnits(); }
         if (j.nearby && j.nearby.length) { NEARBY = j.nearby; renderNearby(); }
         if (j.settings) { SETTINGS = Object.assign(SETTINGS, j.settings); renderContact(); }
         if (j.server) showVersion(j.server);
